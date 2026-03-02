@@ -1,11 +1,16 @@
 import type { TelegramBridge } from "../telegram/bridge.js";
 import type Database from "better-sqlite3";
-import type { PluginSDK, PluginLogger } from "@teleton-agent/sdk";
+import type { PluginSDK, PluginLogger, BotManifest } from "@teleton-agent/sdk";
 import { SDK_VERSION } from "@teleton-agent/sdk";
 import { createTonSDK } from "./ton.js";
 import { createTelegramSDK } from "./telegram.js";
 import { createSecretsSDK } from "./secrets.js";
 import { createStorageSDK } from "./storage.js";
+import { createBotSDK } from "./bot.js";
+import type { InlineRouter } from "../bot/inline-router.js";
+import type { GramJSBotClient } from "../bot/gramjs-bot.js";
+import type { Bot } from "grammy";
+import type { PluginRateLimiter } from "../bot/rate-limiter.js";
 import { createLogger as pinoCreateLogger } from "../utils/logger.js";
 
 const sdkLog = pinoCreateLogger("SDK");
@@ -71,12 +76,30 @@ export type {
   ToolResult,
   ToolScope,
   ToolCategory,
+  ButtonStyle,
+  ButtonDef,
+  InlineResultContent,
+  InlineResult,
+  InlineQueryContext,
+  CallbackContext,
+  ChosenResultContext,
+  BotManifest,
+  BotKeyboard,
+  BotSDK,
 } from "@teleton-agent/sdk";
 
 export { PluginSDKError, type SDKErrorCode, SDK_VERSION } from "@teleton-agent/sdk";
 
 export interface SDKDependencies {
   bridge: TelegramBridge;
+  /** Inline router for bot SDK (null if bot not configured) */
+  inlineRouter?: InlineRouter | null;
+  /** GramJS bot client for MTProto operations */
+  gramjsBot?: GramJSBotClient | null;
+  /** Grammy bot instance */
+  grammyBot?: Bot | null;
+  /** Rate limiter for bot actions */
+  rateLimiter?: PluginRateLimiter | null;
 }
 
 export interface CreatePluginSDKOptions {
@@ -84,6 +107,8 @@ export interface CreatePluginSDKOptions {
   db: Database.Database | null;
   sanitizedConfig: Record<string, unknown>;
   pluginConfig: Record<string, unknown>;
+  /** Bot manifest from plugin (if plugin declares bot capabilities) */
+  botManifest?: BotManifest;
 }
 
 /** Block ATTACH/DETACH to prevent cross-plugin DB access */
@@ -137,7 +162,14 @@ export function createPluginSDK(deps: SDKDependencies, opts: CreatePluginSDKOpti
   const frozenConfig = Object.freeze(JSON.parse(JSON.stringify(opts.sanitizedConfig ?? {})));
   const frozenPluginConfig = Object.freeze(JSON.parse(JSON.stringify(opts.pluginConfig ?? {})));
 
-  return Object.freeze({
+  // Lazy bot SDK — deps.inlineRouter/gramjsBot/grammyBot may not be available
+  // at plugin load time (plugins load before DealBot starts). The getter
+  // retries until deps are wired and a non-null BotSDK is created.
+  // Plugins without a botManifest get null cached immediately (no retry).
+  let cachedBot: ReturnType<typeof createBotSDK> | undefined;
+  if (!opts.botManifest) cachedBot = null;
+
+  const sdk: PluginSDK = {
     version: SDK_VERSION,
     ton,
     telegram,
@@ -147,7 +179,24 @@ export function createPluginSDK(deps: SDKDependencies, opts: CreatePluginSDKOpti
     config: frozenConfig,
     pluginConfig: frozenPluginConfig,
     log: frozenLog,
-  });
+    get bot() {
+      if (cachedBot !== undefined) return cachedBot;
+      const result = createBotSDK(
+        deps.inlineRouter ?? null,
+        deps.gramjsBot ?? null,
+        deps.grammyBot ?? null,
+        opts.pluginName,
+        opts.botManifest,
+        deps.rateLimiter ?? null,
+        frozenLog
+      );
+      // Only cache non-null — retry on next access if deps aren't ready yet
+      if (result) cachedBot = result;
+      return result;
+    },
+  };
+
+  return Object.freeze(sdk);
 }
 
 function createLogger(pluginName: string): PluginLogger {

@@ -89,3 +89,25 @@ export function toGrammyKeyboard(buttons: StyledButtonDef[][]): InlineKeyboard {
 export function hasStyledButtons(buttons: StyledButtonDef[][]): boolean {
   return buttons.some((row) => row.length > 0);
 }
+
+/**
+ * Convert plugin ButtonDef[][] to StyledButtonDef[][] with prefixed callbacks.
+ * Shared by both sdk/bot.ts and bot/inline-router.ts.
+ */
+export function prefixButtons(
+  rows: { text: string; callback?: string; url?: string; copy?: string; style?: ButtonStyle }[][],
+  pluginName: string
+): StyledButtonDef[][] {
+  return rows.map((row) =>
+    row.map((btn) => {
+      if (btn.copy) {
+        return { text: btn.text, callbackData: "", copyText: btn.copy, style: btn.style };
+      }
+      return {
+        text: btn.text,
+        callbackData: btn.callback ? `${pluginName}:${btn.callback}` : "",
+        style: btn.style,
+      };
+    })
+  );
+}

@@ -106,6 +106,17 @@ export type {
   // Plugin event hooks
   PluginMessageEvent,
   PluginCallbackEvent,
+  // Bot SDK
+  ButtonStyle,
+  ButtonDef,
+  InlineResultContent,
+  InlineResult,
+  InlineQueryContext,
+  CallbackContext,
+  ChosenResultContext,
+  BotManifest,
+  BotKeyboard,
+  BotSDK,
 } from "./types.js";
 
 // ─── Errors ──────────────────────────────────────────────────────

@@ -37,6 +37,18 @@ const ManifestSchema = z.object({
       })
     )
     .optional(),
+  bot: z
+    .object({
+      inline: z.boolean().optional(),
+      callbacks: z.boolean().optional(),
+      rateLimits: z
+        .object({
+          inlinePerMinute: z.number().positive().optional(),
+          callbackPerMinute: z.number().positive().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export type PluginManifest = z.infer<typeof ManifestSchema>;

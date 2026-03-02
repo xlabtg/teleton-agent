@@ -16,6 +16,7 @@ import { tools as dedustTools } from "./dedust/index.js";
 import { tools as journalTools } from "./journal/index.js";
 import { tools as workspaceTools } from "./workspace/index.js";
 import { tools as webTools } from "./web/index.js";
+import { tools as botTools } from "./bot/index.js";
 
 const ALL_CATEGORIES: ToolEntry[][] = [
   telegramTools,
@@ -26,6 +27,7 @@ const ALL_CATEGORIES: ToolEntry[][] = [
   journalTools,
   workspaceTools,
   webTools,
+  botTools,
 ];
 
 export function registerAllTools(registry: ToolRegistry): void {

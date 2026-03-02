@@ -1,10 +1,11 @@
 import { join } from "path";
-import type { PluginModule } from "../agent/tools/types.js";
+import type { PluginModule, PluginContext } from "../agent/tools/types.js";
 import { initDealsConfig, DEALS_CONFIG } from "./config.js";
 import { DealBot, VerificationPoller } from "../bot/index.js";
 import { createLogger } from "../utils/logger.js";
 import { openDealsDb, closeDealsDb, getDealsDb } from "./db.js";
 import { TELETON_ROOT } from "../workspace/paths.js";
+import type { MiddlewareFn, Context } from "grammy";
 
 const log = createLogger("Deal");
 import { createDbWrapper } from "../utils/module-db.js";
@@ -25,6 +26,17 @@ import {
 let dealBot: DealBot | null = null;
 let verificationPoller: VerificationPoller | null = null;
 let expiryInterval: ReturnType<typeof setInterval> | null = null;
+let botPreMiddleware: MiddlewareFn<Context> | undefined;
+
+/** Set middleware to install on the Grammy bot BEFORE DealBot handlers */
+export function setBotPreMiddleware(mw: MiddlewareFn<Context>): void {
+  botPreMiddleware = mw;
+}
+
+/** Get the active DealBot instance (for SDK wiring) */
+export function getDealBot(): DealBot | null {
+  return dealBot;
+}
 
 const withDealsDb = createDbWrapper(getDealsDb, "Deals");
 
@@ -78,7 +90,8 @@ const dealsModule: PluginModule = {
             apiHash: config.telegram.api_hash,
             gramjsSessionPath: join(TELETON_ROOT, "gramjs_bot_session.txt"),
           },
-          dealsDb
+          dealsDb,
+          botPreMiddleware
         );
         await dealBot.start();
 

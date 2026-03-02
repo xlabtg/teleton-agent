@@ -233,6 +233,7 @@ export function adaptPlugin(
             db: pluginDb,
             sanitizedConfig,
             pluginConfig,
+            botManifest: manifest?.bot,
           });
           toolDefs = raw.tools(sdk);
         } else if (Array.isArray(raw.tools)) {

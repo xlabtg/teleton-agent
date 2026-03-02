@@ -33,6 +33,9 @@ import {
 import { getErrorMessage } from "./utils/errors.js";
 import { createLogger, initLoggerFromConfig } from "./utils/logger.js";
 import { AgentLifecycle } from "./agent/lifecycle.js";
+import { InlineRouter } from "./bot/inline-router.js";
+import { PluginRateLimiter } from "./bot/rate-limiter.js";
+import { setBotPreMiddleware, getDealBot } from "./deals/module.js";
 
 const log = createLogger("App");
 
@@ -425,6 +428,14 @@ ${blue}  ┌──────────────────────�
     const username = await this.bridge.getUsername();
     const walletAddress = getWalletAddress();
 
+    // Set up inline router for plugin bot SDK (before modules start)
+    const inlineRouter = new InlineRouter();
+    const rateLimiter = new PluginRateLimiter();
+
+    // Install router middleware on the DealBot's Grammy instance
+    // setBotPreMiddleware must be called BEFORE deals module start()
+    setBotPreMiddleware(inlineRouter.middleware());
+
     // Start module background jobs (after bridge connect — deals needs bridge)
     const moduleDb = getDatabase().getDb();
     const pluginContext: PluginContext = {
@@ -448,6 +459,17 @@ ${blue}  ┌──────────────────────�
         }
       }
       throw error;
+    }
+
+    // Wire bot references into SDK deps (after DealBot has started)
+    const activeDealBot = getDealBot();
+    if (activeDealBot) {
+      this.sdkDeps.inlineRouter = inlineRouter;
+      this.sdkDeps.gramjsBot = activeDealBot.getGramJSBot();
+      this.sdkDeps.grammyBot = activeDealBot.getBot();
+      this.sdkDeps.rateLimiter = rateLimiter;
+      inlineRouter.setGramJSBot(activeDealBot.getGramJSBot());
+      log.info("🔌 Bot SDK: inline router installed");
     }
 
     // Collect plugin event hooks and wire them up

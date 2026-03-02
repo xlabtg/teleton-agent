@@ -1643,6 +1643,140 @@ export interface SimpleToolDef {
   category?: ToolCategory;
 }
 
+// ─── Bot SDK ─────────────────────────────────────────────────────
+
+/** Button style for colored inline keyboards (GramJS Layer 222) */
+export type ButtonStyle = "success" | "danger" | "primary";
+
+/** Inline keyboard button definition */
+export interface ButtonDef {
+  /** Button label text */
+  text: string;
+  /** Callback data (auto-prefixed with plugin name) */
+  callback?: string;
+  /** URL to open */
+  url?: string;
+  /** Text to copy on click (native copy-to-clipboard) */
+  copy?: string;
+  /** Button color style (GramJS only, graceful fallback on Bot API) */
+  style?: ButtonStyle;
+}
+
+/** Content for an inline query result */
+export type InlineResultContent =
+  | { text: string; parseMode?: "HTML" | "Markdown" }
+  | { photoUrl: string; thumbUrl?: string; caption?: string }
+  | { gifUrl: string; thumbUrl?: string; caption?: string };
+
+/** A single inline query result returned by a plugin */
+export interface InlineResult {
+  /** Unique result ID */
+  id: string;
+  /** Result type */
+  type: "article" | "photo" | "gif";
+  /** Result title */
+  title: string;
+  /** Short description */
+  description?: string;
+  /** Thumbnail URL */
+  thumbUrl?: string;
+  /** Message content to send */
+  content: InlineResultContent;
+  /** Inline keyboard rows */
+  keyboard?: ButtonDef[][];
+}
+
+/** Context passed to inline query handlers */
+export interface InlineQueryContext {
+  /** The query text (prefix already stripped) */
+  query: string;
+  /** Telegram query ID */
+  queryId: string;
+  /** User who triggered the query */
+  userId: number;
+  /** Pagination offset */
+  offset: string;
+}
+
+/** Context passed to callback query handlers */
+export interface CallbackContext {
+  /** Raw callback data (prefix already stripped) */
+  data: string;
+  /** Regex match groups (if pattern was used) */
+  match: string[];
+  /** User who clicked */
+  userId: number;
+  /** Username of the user */
+  username?: string;
+  /** Inline message ID (if from inline message) */
+  inlineMessageId?: string;
+  /** Chat ID (if from regular message) */
+  chatId?: string;
+  /** Message ID (if from regular message) */
+  messageId?: number;
+  /** Answer the callback query (toast/alert) */
+  answer(text?: string, alert?: boolean): Promise<void>;
+  /** Edit the message that contains the button */
+  editMessage(text: string, opts?: { keyboard?: ButtonDef[][]; parseMode?: string }): Promise<void>;
+}
+
+/** Context passed to chosen inline result handlers */
+export interface ChosenResultContext {
+  /** The result ID that was chosen */
+  resultId: string;
+  /** Inline message ID (available if bot has inline feedback enabled) */
+  inlineMessageId?: string;
+  /** The query that was used */
+  query: string;
+}
+
+/** Bot manifest declaring plugin bot capabilities */
+export interface BotManifest {
+  /** Enable inline query handling */
+  inline?: boolean;
+  /** Enable callback query handling */
+  callbacks?: boolean;
+  /** Rate limits */
+  rateLimits?: {
+    /** Max inline answers per minute (default: 30) */
+    inlinePerMinute?: number;
+    /** Max callback answers per minute (default: 60) */
+    callbackPerMinute?: number;
+  };
+}
+
+/** Keyboard object returned by sdk.bot.keyboard() */
+export interface BotKeyboard {
+  /** Get Grammy InlineKeyboard (Bot API, no colors) */
+  toGrammy(): unknown;
+  /** Get GramJS TL ReplyInlineMarkup (MTProto, with colors) */
+  toTL(): unknown;
+  /** Raw button definitions (with prefixed callbacks) */
+  rows: ButtonDef[][];
+}
+
+/** Bot SDK — inline mode interface for plugins */
+export interface BotSDK {
+  /** Whether the bot is available */
+  readonly isAvailable: boolean;
+  /** Bot username */
+  readonly username: string;
+  /** Register an inline query handler */
+  onInlineQuery(handler: (ctx: InlineQueryContext) => Promise<InlineResult[]>): void;
+  /** Register a callback query handler */
+  onCallback(pattern: string, handler: (ctx: CallbackContext) => Promise<void>): void;
+  /** Register a chosen inline result handler */
+  onChosenResult(handler: (ctx: ChosenResultContext) => Promise<void>): void;
+  /** Edit an inline message */
+  editInlineMessage(
+    inlineMessageId: string,
+    text: string,
+    opts?: { keyboard?: ButtonDef[][]; parseMode?: string }
+  ): Promise<void>;
+  /** Build a keyboard with auto-prefixed callback data */
+  keyboard(rows: ButtonDef[][]): BotKeyboard;
+}
+
 /**
  * Plugin manifest — optional metadata for plugin registration.
  *
@@ -1678,6 +1812,8 @@ export interface PluginManifest {
    * ```
    */
   secrets?: Record<string, SecretDeclaration>;
+  /** Bot capabilities (inline mode, callbacks) */
+  bot?: BotManifest;
 }
 
 // ─── Root SDK ────────────────────────────────────────────────────
@@ -1730,4 +1866,7 @@ export interface PluginSDK {
 
   /** Prefixed logger */
   readonly log: PluginLogger;
+
+  /** Bot inline mode SDK (null if bot not available or plugin has no bot manifest) */
+  readonly bot: BotSDK | null;
 }

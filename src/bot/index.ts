@@ -3,7 +3,7 @@
  * Grammy (Bot API) + GramJS (MTProto styled buttons).
  */
 
-import { Bot } from "grammy";
+import { Bot, type MiddlewareFn, type Context } from "grammy";
 import { Api } from "telegram";
 import type Database from "better-sqlite3";
 import type { BotConfig, DealContext } from "./types.js";
@@ -48,13 +48,18 @@ export class DealBot {
   private config: BotConfig;
   private gramjsBot: GramJSBotClient | null = null;
 
-  constructor(config: BotConfig, db: Database.Database) {
+  constructor(config: BotConfig, db: Database.Database, preMiddleware?: MiddlewareFn<Context>) {
     this.config = config;
     this.db = db;
     this.bot = new Bot(config.token);
 
     if (config.apiId && config.apiHash) {
       this.gramjsBot = new GramJSBotClient(config.apiId, config.apiHash, config.gramjsSessionPath);
+    }
+
+    // Install pre-middleware BEFORE DealBot handlers (e.g. plugin inline router)
+    if (preMiddleware) {
+      this.bot.use(preMiddleware);
     }
 
     this.setupHandlers();
@@ -518,10 +523,17 @@ export class DealBot {
   }
 
   /**
-   * Get bot instance for external access
+   * Get Grammy bot instance for external access
    */
   getBot(): Bot {
     return this.bot;
+  }
+
+  /**
+   * Get GramJS bot client for MTProto operations (styled buttons, inline edits)
+   */
+  getGramJSBot(): GramJSBotClient | null {
+    return this.gramjsBot;
   }
 }
 

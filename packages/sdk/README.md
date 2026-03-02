@@ -136,6 +136,7 @@ Root SDK object passed to plugin functions.
 | `config` | `Record<string, unknown>` | Sanitized app config (no secrets) |
 | `pluginConfig` | `Record<string, unknown>` | Plugin-specific config from `config.yaml` |
 | `log` | `PluginLogger` | Prefixed logger |
+| `bot` | `BotSDK \| null` | Bot inline mode SDK (null if not configured — see [Bot SDK](#bot-sdk-sdkbot)) |
 
 #### `PluginLogger`
 
@@ -490,7 +491,7 @@ await sdk.ton.dns.setSiteRecord("mysite.ton", "aabbccdd...64hex");
 | `owner` | `string?` | Current owner address |
 | `nftAddress` | `string?` | NFT address of the domain |
 | `walletAddress` | `string?` | Linked wallet address |
-| `auction` | `object?` | Active auction: `{ bids, lastBid, endTime }` |
+| `auction` | `object?` | Active auction: `{ bids, lastBid, endTime }` (reserved, not yet populated) |
 
 #### `DnsResolveResult`
 
@@ -895,6 +896,293 @@ sdk.storage.set("api_result", data, { ttl: 300_000 });
 
 ---
 
+### Bot SDK (`sdk.bot`)
+
+The Bot SDK enables plugins to handle Telegram inline queries and button callbacks. It is **lazy-loaded** — `sdk.bot` is `null` unless the plugin declares bot capabilities in its manifest.
+
+To enable the Bot SDK, add a `bot` field to your manifest:
+
+```typescript
+export const manifest: PluginManifest = {
+  name: "my-inline-bot",
+  version: "1.0.0",
+  bot: {
+    inline: true,      // Enable inline query handling
+    callbacks: true,    // Enable callback button handling
+    rateLimits: {
+      inlinePerMinute: 30,   // Default: 30
+      callbackPerMinute: 60, // Default: 60
+    },
+  },
+};
+```
+
+#### `BotSDK`
+
+| Property / Method | Returns | Description |
+|-------------------|---------|-------------|
+| `isAvailable` | `boolean` | Whether the bot client is connected (getter) |
+| `username` | `string` | Bot's username (getter, empty string if unavailable) |
+| `onInlineQuery(handler)` | `void` | Register handler for inline queries |
+| `onCallback(pattern, handler)` | `void` | Register handler for button callbacks (glob pattern) |
+| `onChosenResult(handler)` | `void` | Register handler for chosen inline results |
+| `editInlineMessage(inlineMessageId, text, opts?)` | `Promise<void>` | Edit an inline message |
+| `keyboard(rows)` | `BotKeyboard` | Build a keyboard with auto-prefixed callback data |
+
+#### `onInlineQuery(handler)`
+
+Register a handler for inline queries. The handler receives the query text (with plugin prefix already stripped) and must return an array of `InlineResult` objects.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| handler | `(ctx: InlineQueryContext) => Promise<InlineResult[]>` | Yes | Handler function |
+
+```typescript
+sdk.bot.onInlineQuery(async (ctx) => {
+  const results = await searchItems(ctx.query);
+  return results.map((item) => ({
+    id: item.id,
+    type: "article",
+    title: item.title,
+    description: item.description,
+    content: { text: item.body, parseMode: "HTML" },
+    keyboard: [
+      [{ text: "Open", url: item.url }],
+      [{ text: "Select", callback: `pick:${item.id}` }],
+    ],
+  }));
+});
+```
+
+#### `onCallback(pattern, handler)`
+
+Register a handler for button callback queries. The pattern uses glob syntax and is matched against the callback data (prefix already stripped).
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| pattern | `string` | Yes | Glob pattern to match callback data (e.g. `"pick:*"`, `"menu:*:*"`) |
+| handler | `(ctx: CallbackContext) => Promise<void>` | Yes | Handler function |
+
+```typescript
+sdk.bot.onCallback("pick:*", async (ctx) => {
+  const itemId = ctx.match[1]; // Captured from glob
+  await ctx.answer(`Selected item ${itemId}`);
+  await ctx.editMessage(`You picked: ${itemId}`, {
+    keyboard: [[{ text: "Back", callback: "menu" }]],
+  });
+});
+```
+
+#### `onChosenResult(handler)`
+
+Register a handler that fires when a user selects an inline result. Requires inline feedback to be enabled in BotFather.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| handler | `(ctx: ChosenResultContext) => Promise<void>` | Yes | Handler function |
+
+```typescript
+sdk.bot.onChosenResult(async (ctx) => {
+  sdk.log.info(`User chose result ${ctx.resultId} for query "${ctx.query}"`);
+  // Track analytics, update state, etc.
+});
+```
+
+#### `editInlineMessage(inlineMessageId, text, opts?)`
+
+Edit an inline message. Tries GramJS first (supports styled/colored buttons), falls back to Grammy Bot API on error.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| inlineMessageId | `string` | Yes | Inline message ID (from callback context) |
+| text | `string` | Yes | New message text (HTML supported) |
+| opts.keyboard | `ButtonDef[][]` | No | Updated keyboard (auto-prefixed) |
+| opts.parseMode | `string` | No | Parse mode: `"HTML"` (default) or `"MarkdownV2"` |
+
+```typescript
+await sdk.bot.editInlineMessage(ctx.inlineMessageId!, "Updated text", {
+  keyboard: [
+    [{ text: "Confirm", callback: "confirm", style: "success" }],
+    [{ text: "Cancel", callback: "cancel", style: "danger" }],
+  ],
+});
+```
+
+#### `keyboard(rows)`
+
+Build an inline keyboard with auto-prefixed callback data. Returns a `BotKeyboard` object with dual output formats.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| rows | `ButtonDef[][]` | Yes | Array of button rows |
+
+```typescript
+const kb = sdk.bot.keyboard([
+  [
+    { text: "Buy", callback: "buy:123", style: "success" },
+    { text: "Sell", callback: "sell:123", style: "danger" },
+  ],
+  [{ text: "Details", url: "https://example.com" }],
+]);
+
+// Use with GramJS (styled colors)
+const tlMarkup = kb.toTL();
+
+// Use with Grammy Bot API (no colors, but wider compatibility)
+const grammyKb = kb.toGrammy();
+```
+
+#### `BotManifest`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `inline` | `boolean?` | Enable inline query handling |
+| `callbacks` | `boolean?` | Enable callback query handling |
+| `rateLimits` | `object?` | `{ inlinePerMinute?: number, callbackPerMinute?: number }` |
+
+#### `BotKeyboard`
+
+| Field / Method | Type | Description |
+|----------------|------|-------------|
+| `rows` | `ButtonDef[][]` | Raw button definitions (with prefixed callbacks) |
+| `toGrammy()` | `unknown` | Grammy `InlineKeyboard` (Bot API, no colors) |
+| `toTL()` | `unknown` | GramJS TL `ReplyInlineMarkup` (MTProto, with colors) |
+
+#### `ButtonDef`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `text` | `string` | Button label text |
+| `callback` | `string?` | Callback data (auto-prefixed with plugin name) |
+| `url` | `string?` | URL to open when pressed |
+| `copy` | `string?` | Text to copy on click (native copy-to-clipboard) |
+| `style` | `ButtonStyle?` | Button color: `"success"` (green), `"danger"` (red), `"primary"` (blue). GramJS only, graceful fallback on Bot API. |
+
+#### `ButtonStyle`
+
+```typescript
+type ButtonStyle = "success" | "danger" | "primary";
+```
+
+#### `InlineResult`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique result ID |
+| `type` | `"article" \| "photo" \| "gif"` | Result type |
+| `title` | `string` | Result title |
+| `description` | `string?` | Short description |
+| `thumbUrl` | `string?` | Thumbnail URL |
+| `content` | `InlineResultContent` | Message content to send |
+| `keyboard` | `ButtonDef[][]?` | Inline keyboard rows |
+
+#### `InlineResultContent`
+
+```typescript
+type InlineResultContent =
+  | { text: string; parseMode?: "HTML" | "Markdown" }
+  | { photoUrl: string; thumbUrl?: string; caption?: string }
+  | { gifUrl: string; thumbUrl?: string; caption?: string };
+```
+
+#### `InlineQueryContext`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `query` | `string` | Query text (plugin prefix already stripped) |
+| `queryId` | `string` | Telegram query ID |
+| `userId` | `number` | User who triggered the query |
+| `offset` | `string` | Pagination offset |
+
+#### `CallbackContext`
+
+| Field / Method | Type | Description |
+|----------------|------|-------------|
+| `data` | `string` | Callback data (prefix already stripped) |
+| `match` | `string[]` | Regex match groups from glob pattern |
+| `userId` | `number` | User who clicked |
+| `username` | `string?` | Username of the user |
+| `inlineMessageId` | `string?` | Inline message ID (if from inline message) |
+| `chatId` | `string?` | Chat ID (if from regular message) |
+| `messageId` | `number?` | Message ID (if from regular message) |
+| `answer(text?, alert?)` | `Promise<void>` | Answer the callback query (toast or alert) |
+| `editMessage(text, opts?)` | `Promise<void>` | Edit the message containing the button |
+
+#### `ChosenResultContext`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `resultId` | `string` | The result ID that was chosen |
+| `inlineMessageId` | `string?` | Inline message ID (if bot has inline feedback enabled) |
+| `query` | `string` | The query that was used |
+
+#### Complete Inline Bot Example
+
+```typescript
+import type { PluginSDK, SimpleToolDef, PluginManifest } from "@teleton-agent/sdk";
+
+export const manifest: PluginManifest = {
+  name: "price-bot",
+  version: "1.0.0",
+  description: "Inline token price checker with styled buttons",
+  bot: {
+    inline: true,
+    callbacks: true,
+    rateLimits: { inlinePerMinute: 30, callbackPerMinute: 60 },
+  },
+};
+
+export const tools = (sdk: PluginSDK): SimpleToolDef[] => {
+  // Set up inline handlers
+  sdk.bot!.onInlineQuery(async (ctx) => {
+    const query = ctx.query.trim();
+    if (!query) return [];
+    const price = await sdk.ton.getJettonPrice(query);
+    if (!price) return [];
+    return [{
+      id: query,
+      type: "article",
+      title: `${query} Price`,
+      description: `$${price.priceUSD ?? "N/A"} | 24h: ${price.change24h ?? "N/A"}`,
+      content: { text: `<b>${query}</b>\nUSD: $${price.priceUSD}\n24h: ${price.change24h}`, parseMode: "HTML" },
+      keyboard: [[
+        { text: "Refresh", callback: `refresh:${query}`, style: "primary" },
+        { text: "Buy", callback: `buy:${query}`, style: "success" },
+      ]],
+    }];
+  });
+
+  sdk.bot!.onCallback("refresh:*", async (ctx) => {
+    const token = ctx.match[1];
+    const price = await sdk.ton.getJettonPrice(token);
+    await ctx.editMessage(`<b>${token}</b>\nUSD: $${price?.priceUSD}\n24h: ${price?.change24h}`, {
+      keyboard: [[
+        { text: "Refresh", callback: `refresh:${token}`, style: "primary" },
+        { text: "Buy", callback: `buy:${token}`, style: "success" },
+      ]],
+    });
+    await ctx.answer("Price updated!");
+  });
+
+  // Regular tools still work alongside inline mode
+  return [{
+    name: "price_check",
+    description: "Check a token's price",
+    parameters: {
+      type: "object",
+      properties: { token: { type: "string", description: "Jetton address" } },
+      required: ["token"],
+    },
+    async execute(params) {
+      const price = await sdk.ton.getJettonPrice(params.token);
+      return { success: true, data: price };
+    },
+  }];
+};
+```
+
+---
+
 ### Plugin Definitions
 
 #### `SimpleToolDef`
@@ -920,6 +1208,7 @@ sdk.storage.set("api_result", data, { ttl: 300_000 });
 | `defaultConfig` | `Record<string, unknown>?` | Default config values |
 | `sdkVersion` | `string?` | Required SDK version range (e.g. `">=1.0.0"`) |
 | `secrets` | `Record<string, SecretDeclaration>?` | Secrets required by this plugin |
+| `bot` | `BotManifest?` | Bot capabilities — enables `sdk.bot` (see [Bot SDK](#bot-sdk-sdkbot)) |
 
 #### `ToolResult`
 
