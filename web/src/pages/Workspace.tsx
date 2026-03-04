@@ -49,7 +49,7 @@ export function Workspace() {
     setError(null);
     try {
       const res = await api.workspaceList(path);
-      setEntries(res.data ?? []);
+      setEntries(res.data?.entries ?? []);
       setCurrentPath(path);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

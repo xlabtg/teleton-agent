@@ -33,8 +33,8 @@ export const jettonBalancesTool: Tool = {
   category: "data-bearing",
 };
 export const jettonBalancesExecutor: ToolExecutor<JettonBalancesParams> = async (
-  params,
-  context
+  _params,
+  _context
 ): Promise<ToolResult> => {
   try {
     const walletData = loadWallet();

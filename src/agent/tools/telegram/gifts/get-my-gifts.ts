@@ -9,16 +9,19 @@ const log = createLogger("Tools");
 /**
  * Gift catalog cache (module-level, shared across calls)
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
 let giftCatalogCache: { map: Map<string, any>; hash: number; expiresAt: number } | null = null;
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Extract emoji from sticker document
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
 function extractEmoji(sticker: any): string | null {
   if (!sticker?.attributes) return null;
 
   const attr = sticker.attributes.find(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     (a: any) =>
       a.className === "DocumentAttributeSticker" || a.className === "DocumentAttributeCustomEmoji"
   );
@@ -108,11 +111,13 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
       ? await gramJsClient.getEntity(targetUserId)
       : new Api.InputPeerSelf();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     let catalogMap: Map<string, any>;
     if (giftCatalogCache && Date.now() < giftCatalogCache.expiresAt) {
       catalogMap = giftCatalogCache.map;
     } else {
       const prevHash = giftCatalogCache?.hash ?? 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       const catalog: any = await gramJsClient.invoke(
         new Api.payments.GetStarGifts({ hash: prevHash })
       );
@@ -146,6 +151,7 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
       }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(
       new Api.payments.GetSavedStarGifts({
         peer,
@@ -157,6 +163,7 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
       })
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const gifts = (result.gifts || []).map((savedGift: any) => {
       const gift = savedGift.gift;
       const isCollectible = gift?.className === "StarGiftUnique";
@@ -166,6 +173,7 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
 
       const isLimited = isCollectible || catalogInfo?.limited === true;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       const extractAttrSummary = (attr: any) =>
         attr
           ? {
@@ -176,6 +184,7 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
             }
           : null;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       const compactGift: Record<string, any> = {
         date: savedGift.date,
         isLimited,
@@ -194,12 +203,15 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
         compactGift.slug = gift.slug;
         compactGift.nftLink = `t.me/nft/${gift.slug}`;
         const modelAttr = gift.attributes?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           (a: any) => a.className === "StarGiftAttributeModel"
         );
         const patternAttr = gift.attributes?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           (a: any) => a.className === "StarGiftAttributePattern"
         );
         const backdropAttr = gift.attributes?.find(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           (a: any) => a.className === "StarGiftAttributeBackdrop"
         );
         compactGift.model = extractAttrSummary(modelAttr);
@@ -221,8 +233,11 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
       return compactGift;
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const limited = gifts.filter((g: any) => g.isLimited);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const unlimited = gifts.filter((g: any) => !g.isLimited);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const collectibles = gifts.filter((g: any) => g.isCollectible);
 
     const viewingLabel = viewSender ? `sender (${context.senderId})` : userId || "self";
@@ -240,6 +255,7 @@ export const telegramGetMyGiftsExecutor: ToolExecutor<GetMyGiftsParams> = async 
           limited: limited.length,
           unlimited: unlimited.length,
           collectibles: collectibles.length,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           canUpgrade: gifts.filter((g: any) => g.canUpgrade).length,
         },
         totalCount: result.count,

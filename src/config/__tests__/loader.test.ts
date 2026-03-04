@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, afterAll } from "vitest";
 import { existsSync, mkdirSync, writeFileSync, unlinkSync, rmdirSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { tmpdir, homedir } from "os";
 import {
   loadConfig,
@@ -165,8 +165,9 @@ telegram:
 // ─── Test Utilities ────────────────────────────────────────────────────────────
 
 function writeTestConfig(content: string, path: string = TEST_CONFIG_PATH): void {
-  if (!existsSync(TEST_DIR)) {
-    mkdirSync(TEST_DIR, { recursive: true });
+  const dir = dirname(path);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
   writeFileSync(path, content, "utf-8");
 }
@@ -769,14 +770,21 @@ telegram:
     });
 
     it("should expand tilde paths", () => {
-      const homePath = join(homedir(), ".teleton-test-config.yaml");
-      writeTestConfig(MINIMAL_CONFIG, homePath);
-
-      expect(configExists("~/.teleton-test-config.yaml")).toBe(true);
-
-      // Cleanup
-      if (existsSync(homePath)) {
-        unlinkSync(homePath);
+      const originalHome = process.env.HOME;
+      process.env.HOME = TEST_DIR;
+      try {
+        const homePath = join(TEST_DIR, ".teleton-test-config.yaml");
+        writeTestConfig(MINIMAL_CONFIG, homePath);
+        expect(configExists("~/.teleton-test-config.yaml")).toBe(true);
+        if (existsSync(homePath)) {
+          unlinkSync(homePath);
+        }
+      } finally {
+        if (originalHome === undefined) {
+          delete process.env.HOME;
+        } else {
+          process.env.HOME = originalHome;
+        }
       }
     });
   });

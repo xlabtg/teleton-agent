@@ -44,6 +44,7 @@ export const telegramResolveGiftOfferExecutor: ToolExecutor<ResolveGiftOfferPara
     const { offerMsgId, decline } = params;
     const gramJsClient = context.bridge.getClient().getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const invokeParams: any = { offerMsgId };
     if (decline) {
       invokeParams.decline = true;
@@ -62,6 +63,7 @@ export const telegramResolveGiftOfferExecutor: ToolExecutor<ResolveGiftOfferPara
         message: `Offer ${action} successfully.`,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     const errorMsg = getErrorMessage(error);
 

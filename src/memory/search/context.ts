@@ -99,6 +99,7 @@ export class ContextBuilder {
     }
 
     const recentTextsSet = new Set(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- filtered for non-null text above
       recentTgMessages.filter((m) => m.text && m.text.length > 0).map((m) => m.text!)
     );
 

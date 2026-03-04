@@ -51,6 +51,7 @@ export const telegramSetCollectiblePriceExecutor: ToolExecutor<SetCollectiblePri
       new Api.payments.UpdateStarGiftPrice({
         stargift: new Api.InputSavedStarGiftUser({ msgId }),
         resellAmount: new Api.StarsAmount({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           amount: BigInt(isListing ? price : 0) as any,
           nanos: 0,
         }),

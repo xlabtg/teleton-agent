@@ -16,7 +16,7 @@ export async function withFloodRetry<T>(
     try {
       return await fn();
     } catch (error) {
-      const waitSeconds = (error as any).seconds;
+      const waitSeconds = (error as Record<string, unknown>).seconds;
 
       if (typeof waitSeconds !== "number") {
         throw error;

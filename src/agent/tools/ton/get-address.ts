@@ -12,8 +12,8 @@ export const tonGetAddressTool: Tool = {
   parameters: Type.Object({}),
 };
 export const tonGetAddressExecutor: ToolExecutor<{}> = async (
-  params,
-  context
+  _params,
+  _context
 ): Promise<ToolResult> => {
   try {
     const address = getWalletAddress();

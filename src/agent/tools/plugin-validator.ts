@@ -70,10 +70,12 @@ export interface SimpleToolDef {
   name: string;
   description: string;
   parameters?: Record<string, unknown>;
+  /* eslint-disable @typescript-eslint/no-explicit-any -- plugin tool params/context are untyped */
   execute: (
     params: any,
     context: any
   ) => Promise<{ success: boolean; data?: unknown; error?: string }>;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
   scope?: "always" | "dm-only" | "group-only" | "admin-only";
   category?: "data-bearing" | "action";
 }

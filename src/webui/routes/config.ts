@@ -143,6 +143,7 @@ export function createConfigRoutes(deps: WebUIServerDeps) {
         setNestedValue(raw, key, parsed);
         writeRawConfig(raw, deps.configPath);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime config is dynamic
         const runtimeConfig = deps.agent.getConfig() as Record<string, any>;
         setNestedValue(runtimeConfig, key, parsed);
 
@@ -202,6 +203,7 @@ export function createConfigRoutes(deps: WebUIServerDeps) {
       writeRawConfig(raw, deps.configPath);
 
       // Update runtime config for immediate effect
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime config is dynamic
       const runtimeConfig = deps.agent.getConfig() as Record<string, any>;
       setNestedValue(runtimeConfig, key, parsed);
       CONFIG_SIDE_EFFECTS[key]?.(parsed as string);
@@ -257,6 +259,7 @@ export function createConfigRoutes(deps: WebUIServerDeps) {
       writeRawConfig(raw, deps.configPath);
 
       // Clear from runtime config
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime config is dynamic
       const runtimeConfig = deps.agent.getConfig() as Record<string, any>;
       deleteNestedValue(runtimeConfig, key);
       CONFIG_SIDE_EFFECTS[key]?.(undefined);

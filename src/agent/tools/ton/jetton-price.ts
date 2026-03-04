@@ -24,7 +24,7 @@ export const jettonPriceTool: Tool = {
 
 export const jettonPriceExecutor: ToolExecutor<JettonPriceParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address } = params;

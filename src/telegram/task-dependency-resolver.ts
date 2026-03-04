@@ -141,7 +141,7 @@ export class TaskDependencyResolver {
           try {
             const payload = JSON.parse(task.payload);
             skipOnFailure = payload.skipOnParentFailure !== false; // Default true
-          } catch (e) {
+          } catch {
             // Invalid JSON, use default
           }
         }

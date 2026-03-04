@@ -132,9 +132,8 @@ ${blue}  ┌──────────────────────�
     const server = new SetupServer(port);
     await server.start();
 
-    process.on("SIGINT", async () => {
-      await server.stop();
-      process.exit(0);
+    process.on("SIGINT", () => {
+      void server.stop().then(() => process.exit(0));
     });
 
     // Wait for user to click "Start Agent" in the browser

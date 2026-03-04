@@ -24,6 +24,8 @@ export interface McpConnection {
   scope: ToolScope;
 }
 
+import { TOOL_EXECUTION_TIMEOUT_MS } from "../../constants/timeouts.js";
+
 const MCP_CONNECT_TIMEOUT_MS = 30_000;
 
 /**
@@ -47,7 +49,7 @@ function parseCommand(config: McpServerConfig): { command: string; args: string[
 function extractText(content: Array<{ type: string; text?: string }>): string {
   return content
     .filter((c) => c.type === "text" && c.text)
-    .map((c) => c.text!)
+    .map((c) => c.text ?? "")
     .join("\n");
 }
 
@@ -69,7 +71,7 @@ export async function loadMcpServers(config: McpConfig): Promise<McpConnection[]
         // Only forward essential environment vars to child processes
         const safeEnv: Record<string, string> = {};
         for (const key of ["PATH", "HOME", "NODE_PATH", "LANG", "TERM"]) {
-          if (process.env[key]) safeEnv[key] = process.env[key]!;
+          if (process.env[key]) safeEnv[key] = process.env[key] ?? "";
         }
 
         // Block dangerous env vars that could enable code injection
@@ -190,10 +192,24 @@ export async function registerMcpTools(
 
         const executor: ToolExecutor = async (params): Promise<ToolResult> => {
           try {
-            const result = await conn.client.callTool({
-              name: mcpTool.name,
-              arguments: params as Record<string, unknown>,
-            });
+            let timeoutHandle: ReturnType<typeof setTimeout>;
+            const result = await Promise.race([
+              conn.client.callTool({
+                name: mcpTool.name,
+                arguments: params as Record<string, unknown>,
+              }),
+              new Promise<never>((_, reject) => {
+                timeoutHandle = setTimeout(
+                  () =>
+                    reject(
+                      new Error(
+                        `MCP tool "${mcpTool.name}" timed out after ${TOOL_EXECUTION_TIMEOUT_MS / 1000}s`
+                      )
+                    ),
+                  TOOL_EXECUTION_TIMEOUT_MS
+                );
+              }),
+            ]).finally(() => clearTimeout(timeoutHandle));
 
             if (result.isError) {
               const errorText = extractText(

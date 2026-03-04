@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- GramJS API responses/errors are untyped; every `any` in this file is for Telegram API interop */
 import type { TelegramBridge } from "../telegram/bridge.js";
 import type { Api } from "telegram";
 import type {
@@ -125,7 +126,6 @@ export function createTelegramSocialSDK(bridge: TelegramBridge, log: PluginLogge
       requireBridge();
       try {
         const client = getClient();
-        const Api = await getApi();
 
         let entity;
         try {

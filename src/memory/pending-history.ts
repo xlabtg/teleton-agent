@@ -21,6 +21,7 @@ export class PendingHistory {
       this.pendingMessages.set(chatId, []);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- set above if missing
     const pending = this.pendingMessages.get(chatId)!;
 
     const cutoff = Date.now() - PendingHistory.MAX_AGE_MS;

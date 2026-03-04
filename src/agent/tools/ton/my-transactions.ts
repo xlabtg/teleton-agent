@@ -30,7 +30,7 @@ export const tonMyTransactionsTool: Tool = {
 
 export const tonMyTransactionsExecutor: ToolExecutor<MyTransactionsParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { limit = 10 } = params;

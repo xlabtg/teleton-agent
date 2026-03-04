@@ -128,6 +128,7 @@ export class TelegramUserClient {
 
           // Detect Fragment SMS for anonymous numbers (+888)
           if (sendResult.type instanceof Api.auth.SentCodeTypeFragmentSms) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 SentCodeTypeFragmentSms.url
             const url = (sendResult.type as any).url;
             if (url) {
               console.log(`\n  Anonymous number — open this URL to get your code:\n  ${url}\n`);
@@ -150,15 +151,16 @@ export class TelegramUserClient {
               );
               authenticated = true;
               break;
-            } catch (err: any) {
-              if (err.errorMessage === "PHONE_CODE_INVALID") {
+            } catch (err: unknown) {
+              const errObj = err as Record<string, string>;
+              if (errObj.errorMessage === "PHONE_CODE_INVALID") {
                 const remaining = maxAttempts - attempt - 1;
                 if (remaining > 0) {
                   console.log(`Invalid code. ${remaining} attempt(s) remaining.`);
                 } else {
                   throw new Error("Authentication failed: too many invalid code attempts");
                 }
-              } else if (err.errorMessage === "SESSION_PASSWORD_NEEDED") {
+              } else if (errObj.errorMessage === "SESSION_PASSWORD_NEEDED") {
                 // 2FA required
                 const pwd = await promptInput("2FA password: ");
                 const { computeCheck } = await import("telegram/Password.js");
@@ -245,21 +247,30 @@ export class TelegramUserClient {
       }
       await handler(event);
     };
-    this.client.addEventHandler(wrappedHandler, new NewMessage(filters ?? {}));
+    this.client.addEventHandler(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- GramJS event handler accepts async
+      wrappedHandler,
+      new NewMessage(filters ?? {})
+    );
   }
 
   addServiceMessageHandler(handler: (msg: Api.MessageService) => Promise<void>): void {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- GramJS event handler accepts async
     this.client.addEventHandler(async (update) => {
       if (
         (update instanceof Api.UpdateNewMessage || update instanceof Api.UpdateNewChannelMessage) &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS update.message lacks proper typing
         (update as any).message instanceof Api.MessageService
       ) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS update.message lacks proper typing
         await handler((update as any).message as Api.MessageService);
       }
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS raw update event
   addCallbackQueryHandler(handler: (event: any) => Promise<void>): void {
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- GramJS event handler accepts async
     this.client.addEventHandler(async (update) => {
       if (
         update.className === "UpdateBotCallbackQuery" ||
@@ -271,6 +282,7 @@ export class TelegramUserClient {
   }
 
   async answerCallbackQuery(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger queryId
     queryId: any,
     options?: {
       message?: string;
@@ -308,6 +320,7 @@ export class TelegramUserClient {
       parseMode === "html" ? markdownToTelegramHtml(options.message) : options.message;
 
     return withFloodRetry(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS sendMessage accepts string | Entity
       this.client.sendMessage(entity as any, {
         message: formattedMessage,
         replyTo: options.replyTo,
@@ -373,7 +386,7 @@ export class TelegramUserClient {
         new Api.contacts.ResolveUsername({ username: clean })
       );
       return result.users[0] || result.chats[0];
-    } catch (error: any) {
+    } catch (error: unknown) {
       log.error({ err: error }, `Failed to resolve username ${clean}`);
       return undefined;
     }

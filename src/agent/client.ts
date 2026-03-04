@@ -4,12 +4,10 @@ import {
   type Model,
   type Api,
   type Context,
-  type UserMessage,
   type AssistantMessage,
   type Message,
   type Tool,
   type ProviderStreamOptions,
-  type KnownProvider,
 } from "@mariozechner/pi-ai";
 import type { AgentConfig } from "../config/schema.js";
 import { appendToTranscript, readTranscript } from "../session/transcript.js";
@@ -181,7 +179,7 @@ export function getProviderModel(provider: SupportedProvider, modelId: string): 
     }
     modelCache.set(cacheKey, model);
     return model;
-  } catch (e) {
+  } catch {
     log.warn(`Model ${modelId} not found for ${provider}, falling back to ${meta.defaultModel}`);
     const fallbackKey = `${provider}:${meta.defaultModel}`;
     const fallbackCached = modelCache.get(fallbackKey);

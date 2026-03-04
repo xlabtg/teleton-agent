@@ -64,6 +64,7 @@ export const telegramTranscribeAudioExecutor: ToolExecutor<TranscribeAudioParams
             msgId: messageId,
           })
         );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       } catch (pollError: any) {
         // On transient errors (FLOOD_WAIT, network), keep polling
         log.warn(
@@ -100,6 +101,7 @@ export const telegramTranscribeAudioExecutor: ToolExecutor<TranscribeAudioParams
         }),
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     // Handle specific Telegram errors
     if (error.errorMessage === "PREMIUM_ACCOUNT_REQUIRED") {

@@ -40,10 +40,11 @@ export const dnsLinkTool: Tool = {
 };
 export const dnsLinkExecutor: ToolExecutor<DnsLinkParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
-    let { domain, wallet_address } = params;
+    let { domain } = params;
+    const { wallet_address } = params;
 
     // Normalize domain
     domain = domain.toLowerCase().replace(/\.ton$/, "");

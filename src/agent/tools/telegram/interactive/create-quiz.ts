@@ -119,7 +119,7 @@ export const telegramCreateQuizExecutor: ToolExecutor<CreateQuizParams> = async 
       closeDate,
     });
 
-    const result = await gramJsClient.invoke(
+    const _result = await gramJsClient.invoke(
       new Api.messages.SendMedia({
         peer: chatId,
         media: new Api.InputMediaPoll({

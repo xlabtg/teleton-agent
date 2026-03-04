@@ -29,10 +29,11 @@ export const dnsBidTool: Tool = {
 };
 export const dnsBidExecutor: ToolExecutor<DnsBidParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
-    let { domain, amount } = params;
+    let { domain } = params;
+    const { amount } = params;
 
     // Normalize domain
     domain = domain.toLowerCase().replace(/\.ton$/, "");
@@ -78,6 +79,7 @@ export const dnsBidExecutor: ToolExecutor<DnsBidParams> = async (
 
     if (auctionsResponse.ok) {
       const auctions = await auctionsResponse.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON DNS API response is untyped
       const auction = auctions.data?.find((a: any) => a.domain === fullDomain);
 
       if (auction) {

@@ -31,10 +31,11 @@ export const dnsStartAuctionTool: Tool = {
 };
 export const dnsStartAuctionExecutor: ToolExecutor<DnsStartAuctionParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
-    let { domain, amount } = params;
+    let { domain } = params;
+    const { amount } = params;
 
     // Normalize and validate domain
     domain = domain.toLowerCase().replace(/\.ton$/, "");

@@ -25,7 +25,6 @@ import { ensureWorkspace, isNewWorkspace } from "../../workspace/manager.js";
 import { TELETON_ROOT } from "../../workspace/paths.js";
 import {
   walletExists,
-  loadWallet,
   getWalletAddress,
   generateWallet,
   importWallet,

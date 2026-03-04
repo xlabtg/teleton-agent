@@ -10,7 +10,6 @@ import {
   SESSION_SLUG_MAX_TOKENS,
   DEFAULT_MAX_SUMMARY_TOKENS,
 } from "../constants/limits.js";
-import { getErrorMessage } from "../utils/errors.js";
 
 const log = createLogger("Session");
 

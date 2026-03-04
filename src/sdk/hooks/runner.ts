@@ -8,9 +8,9 @@ async function withTimeout(
   fn: () => void | Promise<void>,
   ms: number,
   label: string,
-  log: HookRunnerOptions["logger"]
+  _log: HookRunnerOptions["logger"]
 ): Promise<void> {
-  let timer: ReturnType<typeof setTimeout>;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([
       Promise.resolve(fn()),
@@ -19,17 +19,9 @@ async function withTimeout(
       }),
     ]);
   } finally {
-    clearTimeout(timer!);
+    if (timer !== undefined) clearTimeout(timer);
   }
 }
-
-/** Modifying hook names — these run sequentially and can mutate the event */
-const MODIFYING_HOOKS: ReadonlySet<HookName> = new Set([
-  "tool:before",
-  "prompt:before",
-  "message:receive",
-  "response:before",
-]);
 
 /** Hooks that support short-circuit via block=true */
 const BLOCKABLE_HOOKS: ReadonlySet<HookName> = new Set([

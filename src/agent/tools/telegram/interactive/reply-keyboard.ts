@@ -106,6 +106,7 @@ export const telegramReplyKeyboardExecutor: ToolExecutor<ReplyKeyboardParams> = 
     });
 
     // Send message with keyboard
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.sendMessage(chatId, {
       message: text,
       replyTo: replyToId,

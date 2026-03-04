@@ -104,6 +104,7 @@ export class JournalStore {
       user_id: params.user_id ?? null,
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- row was just inserted
     return this.getEntryById(info.lastInsertRowid as number)!;
   }
 
@@ -114,6 +115,7 @@ export class JournalStore {
 
   updateEntry(params: UpdateEntryParams): JournalEntry | null {
     const updates: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic SQL parameter bag
     const values: Record<string, any> = { id: params.id };
 
     if (params.outcome !== undefined) {
@@ -153,6 +155,7 @@ export class JournalStore {
 
   queryEntries(params: QueryParams = {}): JournalEntry[] {
     const conditions: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic SQL parameter bag
     const values: Record<string, any> = {};
 
     if (params.type) {
@@ -207,6 +210,7 @@ export class JournalStore {
     win_rate: number;
   } {
     const conditions: string[] = ["outcome IN ('profit', 'loss')"];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic SQL parameter bag
     const values: Record<string, any> = {};
 
     if (params.type) {

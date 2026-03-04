@@ -305,7 +305,7 @@ export class TelegramBridge {
       if (sender instanceof Api.User) {
         isBot = sender.bot ?? false;
       }
-    } catch (e) {
+    } catch {
       // getSender() can fail on deleted accounts, timeouts, etc.
       // Non-critical: message still processed with default sender info
     }
@@ -417,7 +417,9 @@ export class TelegramBridge {
     let text = "";
 
     if (action instanceof Api.MessageActionStarGiftPurchaseOffer) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const gift = action.gift as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const price = action.price as any;
       const isUnique = gift.className === "StarGiftUnique";
       const title = gift.title || "Unknown Gift";
@@ -440,7 +442,9 @@ export class TelegramBridge {
         `Gift offer received: ${priceStars} Stars for "${title}" from ${senderUsername || senderId}`
       );
     } else if (action instanceof Api.MessageActionStarGiftPurchaseOfferDeclined) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const gift = action.gift as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const price = action.price as any;
       const isUnique = gift.className === "StarGiftUnique";
       const title = gift.title || "Unknown Gift";
@@ -454,9 +458,11 @@ export class TelegramBridge {
 
       log.info(`Gift offer ${reason}: ${priceStars} Stars for "${title}"`);
     } else if (action instanceof Api.MessageActionStarGift) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const gift = action.gift as any;
       const title = gift.title || "Unknown Gift";
       const stars = gift.stars?.toString() || "?";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS Layer 222 dynamic TL types
       const giftMessage = (action.message as any)?.text || "";
       const fromAnonymous = action.nameHidden;
 

@@ -8,7 +8,7 @@ import {
   readdirSync,
   statSync,
 } from "fs";
-import { join, dirname } from "path";
+import { join } from "path";
 import type { Message, AssistantMessage } from "@mariozechner/pi-ai";
 import { TELETON_ROOT } from "../workspace/paths.js";
 import { createLogger } from "../utils/logger.js";

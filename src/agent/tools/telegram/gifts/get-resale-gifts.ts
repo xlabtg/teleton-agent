@@ -62,8 +62,10 @@ export const telegramGetResaleGiftsExecutor: ToolExecutor<GetResaleGiftsParams> 
       };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(
       new Api.payments.GetResaleStarGifts({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         giftId: BigInt(giftId) as any,
         offset: "",
         limit,
@@ -71,13 +73,16 @@ export const telegramGetResaleGiftsExecutor: ToolExecutor<GetResaleGiftsParams> 
       })
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const listings = (result.gifts || []).map((gift: any) => {
       const isUnique = gift.className === "StarGiftUnique";
 
       if (isUnique) {
         // StarGiftUnique: individual collectible with slug, num, owner, attributes
         const resellAmounts = gift.resellAmount || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         const starsPrice = resellAmounts.find((a: any) => !a.ton);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         const tonPrice = resellAmounts.find((a: any) => a.ton);
 
         return {
@@ -91,6 +96,7 @@ export const telegramGetResaleGiftsExecutor: ToolExecutor<GetResaleGiftsParams> 
           ownerName: gift.ownerName || undefined,
           priceStars: starsPrice ? starsPrice.amount?.toString() : undefined,
           priceTon: tonPrice ? tonPrice.amount?.toString() : undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
           attributes: (gift.attributes || []).map((attr: any) => ({
             type: attr.className?.replace("StarGiftAttribute", "").toLowerCase(),
             name: attr.name,

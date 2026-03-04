@@ -93,6 +93,7 @@ export const telegramGetAvailableGiftsExecutor: ToolExecutor<GetAvailableGiftsPa
     const { filter = "all", includeSoldOut = true, limit = 20, offset = 0, sort, search } = params;
     const gramJsClient = context.bridge.getClient().getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(new Api.payments.GetStarGifts({ hash: 0 }));
 
     if (result.className === "payments.StarGiftsNotModified") {
@@ -103,6 +104,7 @@ export const telegramGetAvailableGiftsExecutor: ToolExecutor<GetAvailableGiftsPa
     }
 
     // Map all gifts
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     let gifts = (result.gifts || []).map((gift: any) => ({
       id: gift.id?.toString(),
       title: gift.title || null,
@@ -119,21 +121,26 @@ export const telegramGetAvailableGiftsExecutor: ToolExecutor<GetAvailableGiftsPa
 
     // Filter
     if (filter === "limited") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => g.limited);
     } else if (filter === "unlimited") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => !g.limited);
     } else if (filter === "resale") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => g.resaleCount > 0);
     }
 
     // soldOut = no fresh stock (mints sell out in ~1 min). Only filter if explicitly requested.
     if (includeSoldOut === false && filter !== "resale" && !search) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => !g.soldOut);
     }
 
     // Search
     if (search) {
       const q = search.toLowerCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => g.title?.toLowerCase().includes(q));
     }
 
@@ -141,13 +148,18 @@ export const telegramGetAvailableGiftsExecutor: ToolExecutor<GetAvailableGiftsPa
 
     // Sort
     if (sort === "price_asc") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts.sort((a: any, b: any) => a.stars - b.stars);
     } else if (sort === "price_desc") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts.sort((a: any, b: any) => b.stars - a.stars);
     } else if (sort === "resale_count") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts.sort((a: any, b: any) => b.resaleCount - a.resaleCount);
     } else if (sort === "resale_min_price") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts = gifts.filter((g: any) => g.resaleMinPrice != null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       gifts.sort((a: any, b: any) => a.resaleMinPrice - b.resaleMinPrice);
     }
 

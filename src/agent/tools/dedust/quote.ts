@@ -50,7 +50,7 @@ export const dedustQuoteTool: Tool = {
 };
 export const dedustQuoteExecutor: ToolExecutor<DedustQuoteParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { from_asset, to_asset, amount, pool_type = "volatile", slippage = 0.01 } = params;
@@ -66,7 +66,7 @@ export const dedustQuoteExecutor: ToolExecutor<DedustQuoteParams> = async (
       try {
         // Parse and convert to friendly format (handles both raw 0:... and friendly EQ... formats)
         fromAssetAddr = Address.parse(from_asset).toString();
-      } catch (error) {
+      } catch {
         return {
           success: false,
           error: `Invalid from_asset address: ${from_asset}`,
@@ -78,7 +78,7 @@ export const dedustQuoteExecutor: ToolExecutor<DedustQuoteParams> = async (
       try {
         // Parse and convert to friendly format (handles both raw 0:... and friendly EQ... formats)
         toAssetAddr = Address.parse(to_asset).toString();
-      } catch (error) {
+      } catch {
         return {
           success: false,
           error: `Invalid to_asset address: ${to_asset}`,

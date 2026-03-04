@@ -44,7 +44,7 @@ export const telegramLeaveChannelExecutor: ToolExecutor<LeaveChannelParams> = as
     let channelEntity;
     try {
       channelEntity = await gramJsClient.getEntity(channel);
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `Could not find channel "${channel}". Make sure it exists and you have access to it.`,

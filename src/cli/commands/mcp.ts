@@ -28,7 +28,7 @@ function ensureMcpSection(raw: Record<string, unknown>): Record<string, Record<s
  */
 function deriveServerName(pkg: string): string {
   // Strip leading scope
-  const unscoped = pkg.includes("/") ? pkg.split("/").pop()! : pkg;
+  const unscoped = pkg.includes("/") ? (pkg.split("/").pop() ?? pkg) : pkg;
   // Strip common prefixes
   return unscoped
     .replace(/^server-/, "")

@@ -65,7 +65,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
       try {
         await getExtractor(this.model);
         return true;
-      } catch (err) {
+      } catch {
         if (attempt === 1) {
           log.warn(`Embedding model load failed (attempt 1), retrying...`);
           // Small delay before retry

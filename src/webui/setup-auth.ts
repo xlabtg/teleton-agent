@@ -118,7 +118,7 @@ export class TelegramAuthManager {
       createdAt: Date.now(),
       apiId,
       apiHash,
-      timer: setTimeout(() => this.cleanup(), SESSION_TTL_MS),
+      timer: setTimeout(() => void this.cleanup(), SESSION_TTL_MS),
     };
 
     log.info("Telegram verification code sent");
@@ -311,7 +311,7 @@ export class TelegramAuthManager {
     if (!this.session || this.session.id !== id) return null;
     // Check TTL
     if (Date.now() - this.session.createdAt > SESSION_TTL_MS) {
-      this.cleanup();
+      void this.cleanup();
       return null;
     }
     return this.session;

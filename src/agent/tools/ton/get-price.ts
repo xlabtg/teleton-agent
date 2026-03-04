@@ -12,7 +12,10 @@ export const tonPriceTool: Tool = {
   category: "data-bearing",
   parameters: Type.Object({}),
 };
-export const tonPriceExecutor: ToolExecutor<{}> = async (params, context): Promise<ToolResult> => {
+export const tonPriceExecutor: ToolExecutor<{}> = async (
+  _params,
+  _context
+): Promise<ToolResult> => {
   try {
     const priceData = await getTonPrice();
 

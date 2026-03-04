@@ -25,7 +25,7 @@ export const stonfiTrendingTool: Tool = {
 };
 export const stonfiTrendingExecutor: ToolExecutor<JettonTrendingParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { limit = 10 } = params;
@@ -47,6 +47,7 @@ export const stonfiTrendingExecutor: ToolExecutor<JettonTrendingParams> = async 
 
     // Filter and sort by popularity
     const trending = assets
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
       .filter((a: any) => {
         // Skip blacklisted, deprecated, and native TON
         if (a.blacklisted || a.deprecated || a.kind === "Ton") return false;
@@ -54,8 +55,10 @@ export const stonfiTrendingExecutor: ToolExecutor<JettonTrendingParams> = async 
         if (!a.popularity_index || a.popularity_index <= 0) return false;
         return true;
       })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
       .sort((a: any, b: any) => (b.popularity_index || 0) - (a.popularity_index || 0))
       .slice(0, limit)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
       .map((a: any, index: number) => ({
         rank: index + 1,
         symbol: a.symbol || "UNKNOWN",
@@ -68,6 +71,7 @@ export const stonfiTrendingExecutor: ToolExecutor<JettonTrendingParams> = async 
       }));
 
     let message = `🔥 Top ${trending.length} Trending Jettons:\n\n`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
     trending.forEach((t: any) => {
       const verifiedIcon = t.verified ? "✅" : "";
       const price = t.priceUSD ? `$${parseFloat(t.priceUSD).toFixed(4)}` : "N/A";

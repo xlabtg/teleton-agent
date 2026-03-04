@@ -53,6 +53,7 @@ export const telegramSendScheduledNowExecutor: ToolExecutor<SendScheduledNowPara
         sentCount: messageIds.length,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     if (error.errorMessage === "MESSAGE_ID_INVALID") {
       return {

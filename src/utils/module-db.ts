@@ -63,6 +63,7 @@ export function openModuleDb(path: string): Database.Database {
   return db;
 }
 export function createDbWrapper(getDb: () => Database.Database | null, moduleName: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic wrapper erases param type
   return function withDb<T>(executor: ToolExecutor<T>): ToolExecutor<any> {
     return (params, context) => {
       const moduleDb = getDb();
@@ -121,11 +122,11 @@ export function migrateFromMainDb(moduleDb: Database.Database, tables: string[])
         const dstCols = moduleDb
           .prepare(`PRAGMA table_info(${table})`)
           .all()
-          .map((r: any) => r.name as string);
+          .map((r: unknown) => (r as { name: string }).name);
         const srcCols = moduleDb
           .prepare(`PRAGMA main_db.table_info(${table})`)
           .all()
-          .map((r: any) => r.name as string);
+          .map((r: unknown) => (r as { name: string }).name);
         const shared = dstCols.filter((c) => srcCols.includes(c));
         if (shared.length === 0) continue;
         const cols = shared.join(", ");
@@ -133,13 +134,9 @@ export function migrateFromMainDb(moduleDb: Database.Database, tables: string[])
           `INSERT OR IGNORE INTO ${table} (${cols}) SELECT ${cols} FROM main_db.${table}`
         );
         totalMigrated += src.c;
-        // Clean up: drop the source table from memory.db so migration never re-runs
-        try {
-          moduleDb.exec(`DROP TABLE main_db.${table}`);
-        } catch {
-          // ignore if drop fails (e.g. read-only)
-        }
-        log.info(`Migrated ${src.c} rows from memory.db → ${table} (source dropped)`);
+        // Source tables are intentionally left in memory.db (copy-only migration).
+        // DROP TABLE was removed to prevent a malformed plugin from deleting core tables.
+        log.info(`Migrated ${src.c} rows from memory.db → ${table}`);
       } catch (e) {
         log.warn({ err: e }, `Could not migrate table ${table}`);
       }

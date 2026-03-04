@@ -1,9 +1,8 @@
 import type { TelegramConfig } from "../config/schema.js";
 import type { AgentRuntime } from "../agent/runtime.js";
-import { TelegramBridge } from "./bridge.js";
+import type { TelegramBridge } from "./bridge.js";
 import { getWalletAddress, getWalletBalance } from "../ton/wallet-service.js";
 import { Address } from "@ton/core";
-import { getProviderMetadata, type SupportedProvider } from "../config/providers.js";
 import { DEALS_CONFIG } from "../deals/config.js";
 import { loadTemplate } from "../workspace/manager.js";
 import { isVerbose, setVerbose, createLogger } from "../utils/logger.js";
@@ -12,7 +11,6 @@ const log = createLogger("Telegram");
 import type { ModulePermissions, ModuleLevel } from "../agent/tools/module-permissions.js";
 import type { ToolRegistry } from "../agent/tools/registry.js";
 import { writePluginSecret, deletePluginSecret, listPluginSecretKeys } from "../sdk/secrets.js";
-import { getErrorMessage } from "../utils/errors.js";
 
 export interface AdminCommand {
   command: string;
@@ -124,7 +122,7 @@ export class AdminHandler {
     }
   }
 
-  private async handleStatusCommand(command: AdminCommand): Promise<string> {
+  private async handleStatusCommand(_command: AdminCommand): Promise<string> {
     const activeChatIds = this.agent.getActiveChatIds();
     const chatCount = activeChatIds.length;
     const cfg = this.agent.getConfig();
@@ -353,15 +351,16 @@ export class AdminHandler {
   }
 
   private listModules(chatId: string): string {
-    const modules = this.registry!.getAvailableModules();
-    const overrides = this.permissions!.getOverrides(chatId);
+    if (!this.registry || !this.permissions) return "❌ Module permissions not available";
+    const modules = this.registry.getAvailableModules();
+    const overrides = this.permissions.getOverrides(chatId);
 
     const lines: string[] = ["🧩 **Modules** (this group)\n"];
 
     for (const mod of modules) {
-      const count = this.registry!.getModuleToolCount(mod);
+      const count = this.registry.getModuleToolCount(mod);
       const level = overrides.get(mod) ?? "open";
-      const isProtected = this.permissions!.isProtected(mod);
+      const isProtected = this.permissions.isProtected(mod);
 
       let icon: string;
       switch (level) {
@@ -401,12 +400,13 @@ export class AdminHandler {
     module = module.toLowerCase();
     level = level.toLowerCase();
 
-    const available = this.registry!.getAvailableModules();
+    if (!this.registry || !this.permissions) return "❌ Module permissions not available";
+    const available = this.registry.getAvailableModules();
     if (!available.includes(module)) {
       return `❌ Unknown module: "${module}"`;
     }
 
-    if (this.permissions!.isProtected(module)) {
+    if (this.permissions.isProtected(module)) {
       return `⛔ Module "${module}" is protected`;
     }
 
@@ -414,8 +414,8 @@ export class AdminHandler {
       return `❌ Invalid level: "${level}". Valid: ${VALID_MODULE_LEVELS.join(", ")}`;
     }
 
-    const oldLevel = this.permissions!.getLevel(chatId, module);
-    this.permissions!.setLevel(chatId, module, level as ModuleLevel, senderId);
+    const oldLevel = this.permissions.getLevel(chatId, module);
+    this.permissions.setLevel(chatId, module, level as ModuleLevel, senderId);
 
     const icons: Record<string, string> = { open: "✅", admin: "🔐", disabled: "❌" };
     return `${icons[level]} **${module}**: ${oldLevel} → ${level}`;
@@ -428,16 +428,17 @@ export class AdminHandler {
 
     module = module.toLowerCase();
 
-    const available = this.registry!.getAvailableModules();
+    if (!this.registry || !this.permissions) return "❌ Module permissions not available";
+    const available = this.registry.getAvailableModules();
     if (!available.includes(module)) {
       return `❌ Unknown module: "${module}"`;
     }
 
-    const tools = this.registry!.getModuleTools(module);
+    const tools = this.registry.getModuleTools(module);
     const count = tools.length;
     const toolWord = count === 1 ? "tool" : "tools";
-    const level = this.permissions!.getLevel(chatId, module);
-    const isProtected = this.permissions!.isProtected(module);
+    const level = this.permissions.getLevel(chatId, module);
+    const isProtected = this.permissions.isProtected(module);
     const protectedMark = isProtected ? " 🔒" : "";
 
     const lines: string[] = [
@@ -452,20 +453,21 @@ export class AdminHandler {
   }
 
   private resetModules(chatId: string, module: string | undefined): string {
+    if (!this.registry || !this.permissions) return "❌ Module permissions not available";
     if (module) {
       module = module.toLowerCase();
-      const available = this.registry!.getAvailableModules();
+      const available = this.registry.getAvailableModules();
       if (!available.includes(module)) {
         return `❌ Unknown module: "${module}"`;
       }
-      if (this.permissions!.isProtected(module)) {
+      if (this.permissions.isProtected(module)) {
         return `⛔ Module "${module}" is protected (already open)`;
       }
-      this.permissions!.resetModule(chatId, module);
+      this.permissions.resetModule(chatId, module);
       return `✅ **${module}** → open`;
     }
 
-    this.permissions!.resetAll(chatId);
+    this.permissions.resetAll(chatId);
     return "✅ All modules reset to **open**";
   }
 

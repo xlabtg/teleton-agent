@@ -57,6 +57,7 @@ export const telegramGetCollectibleInfoExecutor: ToolExecutor<GetCollectibleInfo
         url: result.url,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     if (
       error.errorMessage === "PHONE_NOT_OCCUPIED" ||

@@ -1,18 +1,12 @@
 import type { TelegramConfig, Config } from "../config/schema.js";
 import type { AgentRuntime } from "../agent/runtime.js";
-import { TelegramBridge, type TelegramMessage } from "./bridge.js";
+import type { TelegramBridge } from "./bridge.js";
+import { type TelegramMessage } from "./bridge.js";
 import { MessageStore, ChatStore, UserStore } from "../memory/feed/index.js";
 import type Database from "better-sqlite3";
 import type { EmbeddingProvider } from "../memory/embeddings/provider.js";
 import { readOffset, writeOffset } from "./offset-store.js";
 import { PendingHistory } from "../memory/pending-history.js";
-import { ToolRegistry } from "../agent/tools/registry.js";
-import {
-  telegramSendMessageTool,
-  telegramSendMessageExecutor,
-  telegramReactTool,
-  telegramReactExecutor,
-} from "../agent/tools/telegram/index.js";
 import type { ToolContext } from "../agent/tools/types.js";
 import { TELEGRAM_SEND_TOOLS } from "../constants/tools.js";
 import { telegramTranscribeAudioExecutor } from "../agent/tools/telegram/media/transcribe-audio.js";
@@ -116,7 +110,6 @@ export class MessageHandler {
   private fullConfig?: Config;
   private agent: AgentRuntime;
   private rateLimiter: RateLimiter;
-  private lastProcessedMessageId: number;
   private messageStore: MessageStore;
   private chatStore: ChatStore;
   private userStore: UserStore;
@@ -125,7 +118,7 @@ export class MessageHandler {
   private db: Database.Database;
   private chatQueue: ChatQueue = new ChatQueue();
   private pluginMessageHooks: Array<(e: PluginMessageEvent) => Promise<void>> = [];
-  private recentMessageIds: Set<number> = new Set();
+  private recentMessageIds: Set<string> = new Set();
   private static readonly DEDUP_MAX_SIZE = 500;
 
   constructor(
@@ -151,8 +144,6 @@ export class MessageHandler {
     this.chatStore = new ChatStore(db);
     this.userStore = new UserStore(db);
     this.pendingHistory = new PendingHistory();
-
-    this.lastProcessedMessageId = 0;
   }
 
   setOwnUserId(userId: string | undefined): void {
@@ -278,11 +269,13 @@ export class MessageHandler {
    * Process and respond to a message
    */
   async handleMessage(message: TelegramMessage): Promise<void> {
+    const dedupKey = `${message.chatId}:${message.id}`;
+
     // 0. Dedup — GramJS may fire the same event multiple times via different MTProto update channels
-    if (this.recentMessageIds.has(message.id)) {
+    if (this.recentMessageIds.has(dedupKey)) {
       return;
     }
-    this.recentMessageIds.add(message.id);
+    this.recentMessageIds.add(dedupKey);
     if (this.recentMessageIds.size > MessageHandler.DEDUP_MAX_SIZE) {
       // Evict oldest half
       const ids = [...this.recentMessageIds];
@@ -402,10 +395,11 @@ export class MessageHandler {
                   config: this.fullConfig,
                 }
               );
-              if (transcribeResult.success && (transcribeResult.data as any)?.text) {
-                transcriptionText = (transcribeResult.data as any).text;
+              const transcribeData = transcribeResult.data as Record<string, unknown> | undefined;
+              if (transcribeResult.success && transcribeData?.text) {
+                transcriptionText = transcribeData.text as string;
                 log.info(
-                  `🎤 Auto-transcribed voice msg ${message.id}: "${transcriptionText!.substring(0, 80)}..."`
+                  `🎤 Auto-transcribed voice msg ${message.id}: "${transcriptionText?.substring(0, 80)}..."`
                 );
               }
             } catch (err) {
@@ -543,12 +537,5 @@ export class MessageHandler {
     } catch (error) {
       log.error({ err: error }, "Error storing message to feed");
     }
-  }
-
-  /**
-   * Get last processed message ID
-   */
-  getLastProcessedMessageId(): number {
-    return this.lastProcessedMessageId;
   }
 }

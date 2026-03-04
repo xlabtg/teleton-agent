@@ -63,7 +63,7 @@ export const telegramAddChatToFolderExecutor: ToolExecutor<AddChatToFolderParams
     }
 
     // Get chat entity
-    const chatEntity = await gramJsClient.getEntity(chatId);
+    const _chatEntity = await gramJsClient.getEntity(chatId);
 
     // Add chat to folder's includePeers
     const inputPeer = await gramJsClient.getInputEntity(chatId);

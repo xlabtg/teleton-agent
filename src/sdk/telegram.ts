@@ -1,15 +1,7 @@
 import type { TelegramBridge } from "../telegram/bridge.js";
 import { Api } from "telegram";
 import { randomLong } from "../utils/gramjs-bigint.js";
-import type {
-  TelegramSDK,
-  SendMessageOptions,
-  EditMessageOptions,
-  DiceResult,
-  TelegramUser,
-  SimpleMessage,
-  PluginLogger,
-} from "@teleton-agent/sdk";
+import type { TelegramSDK, TelegramUser, SimpleMessage, PluginLogger } from "@teleton-agent/sdk";
 import { PluginSDKError } from "@teleton-agent/sdk";
 import { requireBridge as requireBridgeUtil } from "./telegram-utils.js";
 import { createTelegramMessagesSDK } from "./telegram-messages.js";

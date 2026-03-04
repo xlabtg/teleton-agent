@@ -8,7 +8,6 @@ export function createLogsRoutes(_deps: WebUIServerDeps) {
 
   app.get("/stream", (c) => {
     return streamSSE(c, async (stream) => {
-      let cleanup: (() => void) | undefined;
       let aborted = false;
 
       stream.onAbort(() => {
@@ -17,9 +16,9 @@ export function createLogsRoutes(_deps: WebUIServerDeps) {
       });
 
       // Add listener for new log entries
-      cleanup = logInterceptor.addListener((entry) => {
+      const cleanup = logInterceptor.addListener((entry) => {
         if (!aborted) {
-          stream.writeSSE({
+          void stream.writeSSE({
             data: JSON.stringify(entry),
             event: "log",
           });

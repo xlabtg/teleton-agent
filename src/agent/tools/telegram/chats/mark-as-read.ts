@@ -56,7 +56,7 @@ export const telegramMarkAsReadExecutor: ToolExecutor<MarkAsReadParams> = async 
     let entity;
     try {
       entity = await gramJsClient.getEntity(chatId);
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `Could not find chat "${chatId}"`,

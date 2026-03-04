@@ -52,6 +52,7 @@ export const telegramSetGiftStatusExecutor: ToolExecutor<SetGiftStatusParams> = 
       emojiStatus = new Api.EmojiStatusEmpty();
     } else {
       emojiStatus = new Api.InputEmojiStatusCollectible({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         collectibleId: BigInt(collectibleId) as any,
       });
     }

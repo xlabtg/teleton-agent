@@ -15,13 +15,9 @@ import type {
   ChosenResultContext,
   ButtonDef,
 } from "@teleton-agent/sdk";
+import type { GramJSBotClient } from "./gramjs-bot.js";
 import { createLogger } from "../utils/logger.js";
-import {
-  toGrammyKeyboard,
-  toTLMarkup,
-  prefixButtons,
-  type StyledButtonDef,
-} from "./services/styled-keyboard.js";
+import { toGrammyKeyboard, toTLMarkup, prefixButtons } from "./services/styled-keyboard.js";
 import { stripCustomEmoji, parseHtml } from "./services/html-parser.js";
 
 const log = createLogger("InlineRouter");
@@ -64,10 +60,10 @@ function globMatch(regex: RegExp, input: string): string[] | null {
 
 export class InlineRouter {
   private plugins = new Map<string, PluginBotHandlers>();
-  private gramjsBot: import("./gramjs-bot.js").GramJSBotClient | null = null;
+  private gramjsBot: GramJSBotClient | null = null;
 
   /** Set GramJS bot reference for styled button edits in callbacks */
-  setGramJSBot(bot: import("./gramjs-bot.js").GramJSBotClient | null): void {
+  setGramJSBot(bot: GramJSBotClient | null): void {
     this.gramjsBot = bot;
   }
 
@@ -146,15 +142,19 @@ export class InlineRouter {
     plugin: PluginBotHandlers
   ): Promise<void> {
     try {
+      const inlineQuery = ctx.inlineQuery;
+      const from = ctx.from;
+      if (!inlineQuery || !from || !plugin.onInlineQuery) return;
+
       const iqCtx: InlineQueryContext = {
         query,
-        queryId: ctx.inlineQuery!.id,
-        userId: ctx.from!.id,
-        offset: ctx.inlineQuery!.offset,
+        queryId: inlineQuery.id,
+        userId: from.id,
+        offset: inlineQuery.offset,
       };
 
       const results = await withTimeout(
-        plugin.onInlineQuery!(iqCtx),
+        plugin.onInlineQuery(iqCtx),
         INLINE_TIMEOUT_MS,
         `Plugin "${pluginName}" inline handler timed out`
       );
@@ -190,7 +190,7 @@ export class InlineRouter {
       let matchedHandler: ((ctx: CallbackContext) => Promise<void>) | undefined;
       let matchGroups: string[] = [];
 
-      for (const entry of plugin.onCallback!) {
+      for (const entry of plugin.onCallback ?? []) {
         const groups = globMatch(entry.regex, strippedData);
         if (groups !== null) {
           matchedHandler = entry.handler;
@@ -206,14 +206,18 @@ export class InlineRouter {
       }
 
       const gramjsBotRef = this.gramjsBot;
+      const callbackQuery = ctx.callbackQuery;
+      const from = ctx.from;
+      if (!from || !callbackQuery) return;
+
       const cbCtx: CallbackContext = {
         data: strippedData,
         match: matchGroups,
-        userId: ctx.from!.id,
-        username: ctx.from!.username,
-        inlineMessageId: ctx.callbackQuery!.inline_message_id,
+        userId: from.id,
+        username: from.username,
+        inlineMessageId: callbackQuery.inline_message_id,
         chatId: ctx.chat?.id?.toString(),
-        messageId: ctx.callbackQuery!.message?.message_id,
+        messageId: callbackQuery.message?.message_id,
         async answer(text?: string, alert?: boolean) {
           if (!answered) {
             answered = true;
@@ -226,7 +230,7 @@ export class InlineRouter {
             : undefined;
 
           // Try GramJS for inline messages (styled/colored buttons via MTProto)
-          const inlineMsgId = ctx.callbackQuery!.inline_message_id;
+          const inlineMsgId = ctx.callbackQuery?.inline_message_id;
           if (inlineMsgId && gramjsBotRef?.isConnected() && styledButtons) {
             try {
               const strippedHtml = stripCustomEmoji(text);
@@ -240,11 +244,10 @@ export class InlineRouter {
                 replyMarkup: markup,
               });
               return;
-            } catch (error: any) {
-              if (error?.errorMessage === "MESSAGE_NOT_MODIFIED") return;
-              log.debug(
-                `GramJS edit failed, falling back to Grammy: ${error?.errorMessage || error}`
-              );
+            } catch (error: unknown) {
+              const errMsg = (error as Record<string, unknown>)?.errorMessage;
+              if (errMsg === "MESSAGE_NOT_MODIFIED") return;
+              log.debug(`GramJS edit failed, falling back to Grammy: ${errMsg || error}`);
             }
           }
 
@@ -286,17 +289,20 @@ export class InlineRouter {
     plugin: PluginBotHandlers
   ): Promise<void> {
     try {
-      const resultId = ctx.chosenInlineResult!.result_id;
+      const chosenResult = ctx.chosenInlineResult;
+      if (!chosenResult || !plugin.onChosenResult) return;
+
+      const resultId = chosenResult.result_id;
       const colonIdx = resultId.indexOf(":");
       const strippedResultId = colonIdx > 0 ? resultId.slice(colonIdx + 1) : resultId;
 
       const crCtx: ChosenResultContext = {
         resultId: strippedResultId,
-        inlineMessageId: ctx.chosenInlineResult!.inline_message_id,
-        query: ctx.chosenInlineResult!.query,
+        inlineMessageId: chosenResult.inline_message_id,
+        query: chosenResult.query,
       };
 
-      await plugin.onChosenResult!(crCtx);
+      await plugin.onChosenResult(crCtx);
     } catch (error) {
       log.error({ err: error }, `Plugin "${pluginName}" chosen result handler failed`);
     }

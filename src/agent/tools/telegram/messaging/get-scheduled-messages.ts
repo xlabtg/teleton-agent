@@ -33,6 +33,7 @@ export const telegramGetScheduledMessagesExecutor: ToolExecutor<
     const result = await gramJsClient.invoke(
       new Api.messages.GetScheduledHistory({
         peer: entity,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         hash: 0n as any,
       })
     );

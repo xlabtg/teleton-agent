@@ -63,6 +63,7 @@ export const telegramGetCommonChatsExecutor: ToolExecutor<GetCommonChatsParams> 
     );
 
     // Parse common chats
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const commonChats = result.chats.map((chat: any) => ({
       chatId: chat.id?.toString(),
       title: chat.title || null,

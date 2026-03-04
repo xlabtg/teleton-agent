@@ -127,7 +127,7 @@ export const telegramCreatePollExecutor: ToolExecutor<CreatePollParams> = async 
       closeDate,
     });
 
-    const result = await gramJsClient.invoke(
+    const _result = await gramJsClient.invoke(
       new Api.messages.SendMedia({
         peer: chatId,
         media: new Api.InputMediaPoll({

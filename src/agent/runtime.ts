@@ -32,16 +32,9 @@ import {
   shouldResetSession,
   resetSessionWithPolicy,
 } from "../session/store.js";
-import {
-  readTranscript,
-  transcriptExists,
-  deleteTranscript,
-  archiveTranscript,
-  appendToTranscript,
-} from "../session/transcript.js";
+import { transcriptExists, archiveTranscript, appendToTranscript } from "../session/transcript.js";
 import type {
   Context,
-  Message as PiMessage,
   Tool as PiAiTool,
   UserMessage,
   ToolResultMessage,
@@ -54,7 +47,7 @@ import { ContextBuilder } from "../memory/search/context.js";
 import type { EmbeddingProvider } from "../memory/embeddings/provider.js";
 import type { ToolRegistry } from "./tools/registry.js";
 import type { ToolContext } from "./tools/types.js";
-import { appendToDailyLog, writeSessionEndSummary } from "../memory/daily-logs.js";
+import { appendToDailyLog } from "../memory/daily-logs.js";
 import { saveSessionMemory } from "../session/memory-hook.js";
 import { createLogger } from "../utils/logger.js";
 import type { createHookRunner } from "../sdk/hooks/runner.js";
@@ -494,6 +487,7 @@ export class AgentRuntime {
       );
       if (preemptiveCompaction) {
         log.info(`🗜️  Preemptive compaction triggered, reloading session...`);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- session guaranteed to exist after compaction
         session = getSession(chatId)!;
         context = loadContextFromTranscript(session.sessionId);
         context.messages.push(userMsg);
@@ -802,24 +796,20 @@ export class AgentRuntime {
             input: block.arguments,
           });
 
-          let resultText = JSON.stringify(result, null, 2);
+          let resultText = JSON.stringify(result);
           if (resultText.length > MAX_TOOL_RESULT_SIZE) {
             log.warn(`⚠️ Tool result too large (${resultText.length} chars), truncating...`);
             const data = result.data as Record<string, unknown> | undefined;
             if (data?.summary || data?.message) {
-              resultText = JSON.stringify(
-                {
-                  success: result.success,
-                  data: {
-                    summary: data.summary || data.message,
-                    _truncated: true,
-                    _originalSize: resultText.length,
-                    _message: "Full data truncated. Use limit parameter for smaller results.",
-                  },
+              resultText = JSON.stringify({
+                success: result.success,
+                data: {
+                  summary: data.summary || data.message,
+                  _truncated: true,
+                  _originalSize: resultText.length,
+                  _message: "Full data truncated. Use limit parameter for smaller results.",
                 },
-                null,
-                2
-              );
+              });
             } else {
               resultText = resultText.slice(0, MAX_TOOL_RESULT_SIZE) + "\n...[TRUNCATED]";
             }

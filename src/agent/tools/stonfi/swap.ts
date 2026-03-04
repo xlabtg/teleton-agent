@@ -52,7 +52,7 @@ export const stonfiSwapTool: Tool = {
 };
 export const stonfiSwapExecutor: ToolExecutor<JettonSwapParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { from_asset, to_asset, amount, slippage = 0.01 } = params;
@@ -208,6 +208,7 @@ export const stonfiSwapExecutor: ToolExecutor<JettonSwapParams> = async (
         },
       };
     }); // withTxLock
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
   } catch (error: any) {
     // Invalidate node cache on 429/5xx so next attempt picks a fresh node
     const status = error?.status || error?.response?.status;

@@ -9,7 +9,6 @@ import {
   ensureSchema,
   ensureVectorTables,
   getSchemaVersion,
-  setSchemaVersion,
   runMigrations,
   CURRENT_SCHEMA_VERSION,
 } from "./schema.js";
@@ -234,6 +233,7 @@ export function getDatabase(config?: DatabaseConfig): MemoryDatabase {
     instance = new MemoryDatabase(config);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by throw above
   return instance!;
 }
 

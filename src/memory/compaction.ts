@@ -1,10 +1,10 @@
 import type { Context, Message, TextContent } from "@mariozechner/pi-ai";
-import { appendToTranscript, readTranscript } from "../session/transcript.js";
+import { appendToTranscript } from "../session/transcript.js";
 import { randomUUID } from "crypto";
 import { writeSummaryToDailyLog } from "./daily-logs.js";
 import { summarizeWithFallback } from "./ai-summarization.js";
 import { saveSessionMemory } from "../session/memory-hook.js";
-import { encodingForModel } from "js-tiktoken";
+
 import type { SupportedProvider } from "../config/providers.js";
 import { createLogger } from "../utils/logger.js";
 import {
@@ -37,25 +37,6 @@ export const DEFAULT_COMPACTION_CONFIG: CompactionConfig = {
 };
 
 const log = createLogger("Memory");
-
-let tokenizer: ReturnType<typeof encodingForModel> | null = null;
-
-function getTokenizer() {
-  if (!tokenizer) {
-    tokenizer = encodingForModel("gpt-4");
-  }
-  return tokenizer;
-}
-
-function estimateTokens(content: string): number {
-  try {
-    const enc = getTokenizer();
-    return enc.encode(content).length;
-  } catch (error) {
-    log.warn({ err: error }, "Token encoding failed, using fallback");
-    return Math.ceil(content.length / 4);
-  }
-}
 
 function estimateContextTokens(context: Context): number {
   let charCount = 0;

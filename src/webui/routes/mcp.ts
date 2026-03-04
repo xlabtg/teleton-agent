@@ -84,7 +84,7 @@ export function createMcpRoutes(deps: WebUIServerDeps) {
         entry.url = body.url;
       } else {
         entry.command = "npx";
-        entry.args = ["-y", body.package!, ...(body.args || [])];
+        entry.args = ["-y", body.package ?? "", ...(body.args || [])];
       }
       if (body.scope && body.scope !== "always") entry.scope = body.scope;
       if (body.env && Object.keys(body.env).length > 0) entry.env = body.env;
@@ -145,7 +145,7 @@ export function createMcpRoutes(deps: WebUIServerDeps) {
 }
 
 function deriveServerName(pkg: string): string {
-  const unscoped = pkg.includes("/") ? pkg.split("/").pop()! : pkg;
+  const unscoped = pkg.includes("/") ? (pkg.split("/").pop() ?? pkg) : pkg;
   return unscoped
     .replace(/^server-/, "")
     .replace(/^mcp-server-/, "")

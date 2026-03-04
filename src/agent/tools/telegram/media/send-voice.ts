@@ -183,6 +183,7 @@ export const telegramSendVoiceExecutor: ToolExecutor<SendVoiceParams> = async (
     const gramJsClient = context.bridge.getClient().getClient();
 
     // Send voice message using GramJS sendFile with voice attributes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const attrs: any = {
       voice: true,
     };
@@ -197,6 +198,7 @@ export const telegramSendVoiceExecutor: ToolExecutor<SendVoiceParams> = async (
     });
 
     // Build response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const responseData: any = {
       messageId: result.id,
       date: result.date,
@@ -227,7 +229,7 @@ export const telegramSendVoiceExecutor: ToolExecutor<SendVoiceParams> = async (
     if (generatedFile) {
       try {
         unlinkSync(generatedFile);
-      } catch (e) {
+      } catch {
         // Ignore cleanup errors
       }
     }

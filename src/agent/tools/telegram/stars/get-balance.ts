@@ -37,6 +37,7 @@ export const telegramGetStarsBalanceExecutor: ToolExecutor<GetStarsBalanceParams
   try {
     const gramJsClient = context.bridge.getClient().getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(
       new Api.payments.GetStarsStatus({
         peer: new Api.InputPeerSelf(),

@@ -452,7 +452,7 @@ export const api = {
     if (_path) params.set('path', _path);
     if (_recursive) params.set('recursive', 'true');
     const qs = params.toString();
-    return fetchAPI<APIResponse<FileEntry[]>>(`/workspace${qs ? `?${qs}` : ''}`);
+    return fetchAPI<APIResponse<{ entries: FileEntry[]; truncated?: boolean }>>(`/workspace${qs ? `?${qs}` : ''}`);
   },
 
   async workspaceRead(path: string) {

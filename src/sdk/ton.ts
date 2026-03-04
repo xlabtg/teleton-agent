@@ -60,7 +60,9 @@ const DEFAULT_TX_RETENTION_DAYS = 30;
 const CLEANUP_PROBABILITY = 0.1;
 
 /** Match a jetton in a balances array by raw address or parsed canonical form. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI jetton balance response is untyped
 function findJettonBalance(balances: any[], jettonAddress: string): any | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI jetton balance items are untyped
   return balances.find((b: any) => {
     if (b.jetton.address.toLowerCase() === jettonAddress.toLowerCase()) return true;
     try {
@@ -461,7 +463,9 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
               return seq;
             } catch (err) {
               lastErr = err;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- HTTP error shape varies across TON client libraries
               const status = (err as any)?.status || (err as any)?.response?.status;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- HTTP error response data is untyped
               const respData = (err as any)?.response?.data;
               if (status === 429 || (status && status >= 500)) {
                 invalidateTonClientCache();
@@ -482,6 +486,7 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
         return { success: true, seqno };
       } catch (err) {
         // Invalidate node cache on 429/5xx so next attempt picks a fresh node
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- HTTP error shape varies across TON client libraries
         const status = (err as any)?.status || (err as any)?.response?.status;
         if (status === 429 || (status && status >= 500)) {
           invalidateTonClientCache();
@@ -533,9 +538,13 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
         const data = await response.json();
         if (!Array.isArray(data.nft_items)) return [];
 
-        return data.nft_items
-          .filter((item: any) => item.trust !== "blacklist")
-          .map((item: any) => mapNftItem(item));
+        return (
+          data.nft_items
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI NFT response is untyped
+            .filter((item: any) => item.trust !== "blacklist")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI NFT response is untyped
+            .map((item: any) => mapNftItem(item))
+        );
       } catch (err) {
         log.error("ton.getNftItems() failed:", err);
         return [];
@@ -640,6 +649,7 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
           decimals = parseInt(infoData.metadata?.decimals || "9");
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI holder response is untyped
         return addresses.map((h: any, index: number) => {
           return {
             rank: index + 1,
@@ -742,9 +752,11 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI NFT item response is untyped
 function mapNftItem(item: any): NftItem {
   const meta = item.metadata || {};
   const coll = item.collection || {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI preview objects are untyped
   const previews: any[] = item.previews || [];
   const preview =
     (previews.length > 1 && previews[1].url) ||

@@ -92,6 +92,7 @@ export class TaskStore {
     const now = Math.floor(Date.now() / 1000);
 
     const updateFields: string[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic SQL parameter values
     const updateValues: any[] = [];
 
     if (updates.description !== undefined) {
@@ -172,6 +173,7 @@ export class TaskStore {
 
   listTasks(filter?: { status?: TaskStatus; createdBy?: string }): Task[] {
     let sql = `SELECT * FROM tasks WHERE 1=1`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic SQL parameter values
     const params: any[] = [];
 
     if (filter?.status) {
@@ -269,6 +271,7 @@ export class TaskStore {
     const queue = [newParentId];
 
     while (queue.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- checked length > 0 above
       const current = queue.shift()!;
 
       if (current === taskId) {
@@ -341,6 +344,7 @@ export class TaskStore {
    * Get all parent task results for a dependent task.
    * Uses a single JOIN query instead of N+1 queries.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- result is JSON-parsed dynamic data
   getParentResults(taskId: string): Array<{ taskId: string; description: string; result: any }> {
     const rows = this.db
       .prepare(
@@ -356,10 +360,11 @@ export class TaskStore {
       .all(taskId) as Array<{ id: string; description: string; result: string }>;
 
     return rows.map((row) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON.parse returns unknown structure
       let parsedResult: any;
       try {
         parsedResult = JSON.parse(row.result);
-      } catch (e) {
+      } catch {
         parsedResult = row.result;
       }
       return {

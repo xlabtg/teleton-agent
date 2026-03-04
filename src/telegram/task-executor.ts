@@ -13,7 +13,7 @@ import { getErrorMessage } from "../utils/errors.js";
  * Safely stringify and truncate JSON for prompt injection.
  * Returns truncated string with indicator if exceeds limit.
  */
-function truncateJson(data: any, maxChars: number = MAX_JSON_FIELD_CHARS): string {
+function truncateJson(data: unknown, maxChars: number = MAX_JSON_FIELD_CHARS): string {
   try {
     const str = JSON.stringify(data, null, 2);
     if (str.length <= maxChars) {
@@ -26,7 +26,7 @@ function truncateJson(data: any, maxChars: number = MAX_JSON_FIELD_CHARS): strin
       (str.length - maxChars + 50) +
       " chars omitted]"
     );
-  } catch (e) {
+  } catch {
     return "[Error serializing data]";
   }
 }
@@ -38,14 +38,14 @@ export type TaskPayload =
   | {
       type: "tool_call";
       tool: string;
-      params: Record<string, any>;
+      params: Record<string, unknown>;
       condition?: string;
       skipOnParentFailure?: boolean;
     }
   | {
       type: "agent_task";
       instructions: string;
-      context?: Record<string, any>;
+      context?: Record<string, unknown>;
       skipOnParentFailure?: boolean;
     };
 
@@ -62,8 +62,9 @@ export async function executeScheduledTask(
   task: Task,
   agent: AgentRuntime,
   toolContext: ToolContext,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic tool registry with dynamic execute()
   toolRegistry: any,
-  parentResults?: Array<{ taskId: string; description: string; result: any }>
+  parentResults?: Array<{ taskId: string; description: string; result: unknown }>
 ): Promise<string> {
   if (!task.payload) {
     // No payload = simple reminder, just notify agent
@@ -120,8 +121,9 @@ export async function executeScheduledTask(
  */
 function buildAgentPrompt(
   task: Task,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- polymorphic execution data shape
   executionData: any,
-  parentResults?: Array<{ taskId: string; description: string; result: any }>
+  parentResults?: Array<{ taskId: string; description: string; result: unknown }>
 ): string {
   const timeAgo = formatTimeAgo(task.createdAt);
 

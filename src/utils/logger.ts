@@ -179,6 +179,7 @@ export function initLoggerFromConfig(logging: { level?: string }): void {
 export function setLogLevel(level: LogLevel): void {
   rootLogger.level = level;
   // Update stdout stream level so more-permissive changes actually take effect
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- pino multistream internal API
   const streams = (multiStream as any).streams;
   if (Array.isArray(streams) && streams[0]) {
     streams[0].level = pino.levels.values[level] ?? 30;

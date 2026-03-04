@@ -31,7 +31,7 @@ export const dnsUnlinkTool: Tool = {
 };
 export const dnsUnlinkExecutor: ToolExecutor<DnsUnlinkParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     let { domain } = params;

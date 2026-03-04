@@ -30,12 +30,14 @@ export const telegramGetUniqueGiftExecutor: ToolExecutor<GetUniqueGiftParams> = 
     const { slug } = params;
     const gramJsClient = context.bridge.getClient().getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(new Api.payments.GetUniqueStarGift({ slug }));
 
     const gift = result.gift;
 
     const users = result.users || [];
     const ownerUserId = gift.ownerId?.userId?.toString();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const ownerUser = users.find((u: any) => u.id?.toString() === ownerUserId);
 
     log.info(`get_unique_gift: slug=${slug} title=${gift.title}`);
@@ -57,11 +59,13 @@ export const telegramGetUniqueGiftExecutor: ToolExecutor<GetUniqueGiftParams> = 
           lastName: ownerUser?.lastName || undefined,
         },
         giftAddress: gift.giftAddress || undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         attributes: (gift.attributes || []).map((attr: any) => ({
           type: attr.className?.replace("StarGiftAttribute", "").toLowerCase(),
           name: attr.name,
           rarityPercent: attr.rarityPermille ? attr.rarityPermille / 10 : undefined,
         })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         resellPrices: (gift.resellAmount || []).map((a: any) => ({
           amount: a.amount?.toString(),
           isTon: !!a.ton,
@@ -75,6 +79,7 @@ export const telegramGetUniqueGiftExecutor: ToolExecutor<GetUniqueGiftParams> = 
         nftLink: `t.me/nft/${gift.slug}`,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     if (error.errorMessage === "STARGIFT_SLUG_INVALID") {
       return {

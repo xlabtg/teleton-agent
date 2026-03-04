@@ -104,6 +104,7 @@ export const telegramEditChannelInfoExecutor: ToolExecutor<EditChannelInfoParams
         updated: updates,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     log.error({ err: error }, "Error editing channel info");
 

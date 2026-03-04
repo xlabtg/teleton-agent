@@ -62,9 +62,10 @@ export const telegramGetUserInfoExecutor: ToolExecutor<GetUserInfoParams> = asyn
         const cleanUsername = username.replace("@", "");
         entity = (await gramJsClient.getEntity(cleanUsername)) as Api.User;
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- userId guaranteed when username is absent
         entity = (await gramJsClient.getEntity(userId!)) as Api.User;
       }
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `User not found: ${username || userId}`,
@@ -103,6 +104,7 @@ export const telegramGetUserInfoExecutor: ToolExecutor<GetUserInfoParams> = asyn
     }
 
     // Build response
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const userInfo: Record<string, any> = {
       id: entity.id.toString(),
       username: entity.username || null,

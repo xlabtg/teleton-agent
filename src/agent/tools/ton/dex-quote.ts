@@ -1,6 +1,6 @@
 import { Type } from "@sinclair/typebox";
 import type { Tool, ToolExecutor, ToolResult } from "../types.js";
-import { TonClient } from "@ton/ton";
+import type { TonClient } from "@ton/ton";
 import { Address } from "@ton/core";
 import { getCachedTonClient } from "../../../ton/wallet-service.js";
 import { StonApiClient } from "@ston-fi/api";
@@ -221,7 +221,7 @@ async function getDedustQuote(
 }
 export const dexQuoteExecutor: ToolExecutor<DexQuoteParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { from_asset, to_asset, amount, slippage = 0.01 } = params;

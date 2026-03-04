@@ -54,6 +54,7 @@ export const telegramGetStarsTransactionsExecutor: ToolExecutor<GetTransactionsP
     const { limit = 20, inbound, outbound } = params;
     const gramJsClient = context.bridge.getClient().getClient();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(
       new Api.payments.GetStarsTransactions({
         peer: new Api.InputPeerSelf(),
@@ -64,6 +65,7 @@ export const telegramGetStarsTransactionsExecutor: ToolExecutor<GetTransactionsP
       })
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const transactions = (result.history || []).map((tx: any) => ({
       id: tx.id,
       stars: tx.stars?.toString(),

@@ -47,6 +47,7 @@ export const dealListExecutor: ToolExecutor<DealListParams> = async (
 
     // Build query
     let query = `SELECT * FROM deals WHERE 1=1`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deal data is dynamically structured
     const queryParams: any[] = [];
 
     if (status) {

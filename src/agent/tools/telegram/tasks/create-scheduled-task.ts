@@ -193,7 +193,7 @@ export const telegramCreateScheduledTaskExecutor: ToolExecutor<CreateScheduledTa
             };
           }
         }
-      } catch (e) {
+      } catch {
         return {
           success: false,
           error: "Invalid JSON payload",

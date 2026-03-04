@@ -31,7 +31,7 @@ export const tonGetTransactionsTool: Tool = {
 };
 export const tonGetTransactionsExecutor: ToolExecutor<GetTransactionsParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { address, limit = 10 } = params;
@@ -39,7 +39,7 @@ export const tonGetTransactionsExecutor: ToolExecutor<GetTransactionsParams> = a
     let addressObj: Address;
     try {
       addressObj = Address.parse(address);
-    } catch (e) {
+    } catch {
       return {
         success: false,
         error: `Invalid address: ${address}`,

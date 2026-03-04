@@ -21,9 +21,11 @@ import { withTxLock } from "../ton/tx-lock.js";
 /** Find the best DeDust pool (volatile first, then stable fallback). */
 async function findDedustPool(
   tonClient: Awaited<ReturnType<typeof getCachedTonClient>>,
-  factory: ReturnType<typeof Factory.createFromAddress> extends infer T ? any : never,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DeDust Factory type from tonClient.open() is complex and not directly importable
+  factory: any,
   fromAsset: ReturnType<typeof Asset.native>,
   toAsset: ReturnType<typeof Asset.native>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DeDust pool type from tonClient.open() is complex and not directly importable
 ): Promise<{ pool: any; poolType: string } | null> {
   try {
     const pool = tonClient.open(await factory.getPool(PoolType.VOLATILE, [fromAsset, toAsset]));
@@ -149,7 +151,10 @@ async function getDedustQuote(
   }
 }
 
-async function executeSTONfiSwap(params: DexSwapParams, log: PluginLogger): Promise<DexSwapResult> {
+async function executeSTONfiSwap(
+  params: DexSwapParams,
+  _log: PluginLogger
+): Promise<DexSwapResult> {
   const { fromAsset, toAsset, amount, slippage = 0.01 } = params;
 
   const walletData = loadWallet();
@@ -251,7 +256,10 @@ async function executeSTONfiSwap(params: DexSwapParams, log: PluginLogger): Prom
   });
 }
 
-async function executeDedustSwap(params: DexSwapParams, log: PluginLogger): Promise<DexSwapResult> {
+async function executeDedustSwap(
+  params: DexSwapParams,
+  _log: PluginLogger
+): Promise<DexSwapResult> {
   const { fromAsset, toAsset, amount, slippage = 0.01 } = params;
 
   const walletData = loadWallet();
@@ -278,7 +286,7 @@ async function executeDedustSwap(params: DexSwapParams, log: PluginLogger): Prom
   const toDecimals = await getDecimals(isTonOutput ? "ton" : toAsset);
   const amountIn = toUnits(amount, fromDecimals);
 
-  const { amountOut, tradeFee } = await pool.getEstimatedSwapOut({
+  const { amountOut } = await pool.getEstimatedSwapOut({
     assetIn: fromAssetObj,
     amountIn,
   });

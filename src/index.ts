@@ -1,4 +1,5 @@
-import { Api } from "telegram";
+import type { Api } from "telegram";
+import type { PluginMessageEvent, PluginCallbackEvent } from "@teleton-agent/sdk";
 import { loadConfig, getDefaultConfigPath } from "./config/index.js";
 import { loadSoul } from "./soul/index.js";
 import { AgentRuntime } from "./agent/runtime.js";
@@ -39,6 +40,8 @@ import { AgentLifecycle } from "./agent/lifecycle.js";
 import { InlineRouter } from "./bot/inline-router.js";
 import { PluginRateLimiter } from "./bot/rate-limiter.js";
 import { setBotPreMiddleware, getDealBot } from "./deals/module.js";
+import type { TaskDependencyResolver } from "./telegram/task-dependency-resolver.js";
+import type { WebUIServer } from "./webui/server.js";
 
 const log = createLogger("App");
 
@@ -51,11 +54,11 @@ export class TeletonApp {
   private debouncer: MessageDebouncer | null = null;
   private toolCount: number = 0;
   private toolRegistry: ToolRegistry;
-  private dependencyResolver: any; // TaskDependencyResolver, imported lazily
+  private dependencyResolver: TaskDependencyResolver | null = null;
   private modules: PluginModule[] = [];
   private memory: MemorySystem;
   private sdkDeps: SDKDependencies;
-  private webuiServer: any = null; // WebUIServer, imported lazily
+  private webuiServer: WebUIServer | null = null;
   private pluginWatcher: PluginWatcher | null = null;
   private mcpConnections: McpConnection[] = [];
   private callbackHandlerRegistered = false;
@@ -325,6 +328,7 @@ ${blue}  ┌──────────────────────�
       this.toolRegistry.setToolIndex(toolIndex);
 
       // Re-index callback for hot-reload plugins
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- callback is fire-and-forget
       this.toolRegistry.onToolsChanged(async (removed, added) => {
         await toolIndex.reindexTools(removed, added);
       });
@@ -365,7 +369,10 @@ ${blue}  ┌──────────────────────�
 
     // Rebuild FTS indexes to ensure search works
     const db = getDatabase();
-    const ftsResult = db.rebuildFtsIndexes();
+    let ftsResult = { knowledge: 0, messages: 0 };
+    if (indexResult.indexed > 0) {
+      ftsResult = db.rebuildFtsIndexes();
+    }
 
     // Index tools for Tool RAG
     const toolIndex = this.toolRegistry.getToolIndex();
@@ -603,6 +610,7 @@ ${blue}  ┌──────────────────────�
     // Register event handler for new messages (with debouncing)
     this.bridge.onNewMessage(async (message) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- debouncer always initialized before handlers register
         await this.debouncer!.enqueue(message);
       } catch (error) {
         log.error({ err: error }, "Error enqueueing message");
@@ -612,6 +620,7 @@ ${blue}  ┌──────────────────────�
     // Register event handler for gift service messages (offers, gifts received)
     this.bridge.onServiceMessage(async (message) => {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- debouncer always initialized before handlers register
         await this.debouncer!.enqueue(message);
       } catch (error) {
         log.error({ err: error }, "Error enqueueing service message");
@@ -894,7 +903,7 @@ ${blue}  ┌──────────────────────�
 
         // Cascade failure to dependents
         await this.dependencyResolver.onTaskFail(taskId);
-      } catch (e) {
+      } catch {
         // Ignore if we can't update task
       }
     }
@@ -908,7 +917,7 @@ ${blue}  ┌──────────────────────�
   private wirePluginEventHooks(): void {
     // Message hooks: single dynamic dispatcher that iterates this.modules
     this.messageHandler.setPluginMessageHooks([
-      async (event: import("@teleton-agent/sdk").PluginMessageEvent) => {
+      async (event: PluginMessageEvent) => {
         for (const mod of this.modules) {
           const withHooks = mod as PluginModuleWithHooks;
           if (withHooks.onMessage) {
@@ -931,20 +940,40 @@ ${blue}  ┌──────────────────────�
 
     // Callback query handler: register ONCE, dispatch dynamically
     if (!this.callbackHandlerRegistered) {
-      this.bridge.getClient().addCallbackQueryHandler(async (update: any) => {
-        const queryId = update.queryId;
-        const data = update.data?.toString() || "";
+      this.bridge.getClient().addCallbackQueryHandler(async (update: unknown) => {
+        if (!update || typeof update !== "object") {
+          return;
+        }
+        const callbackUpdate = update as {
+          queryId?: unknown;
+          data?: { toString(): string } | string;
+          peer?: {
+            channelId?: { toString(): string };
+            chatId?: { toString(): string };
+            userId?: { toString(): string };
+          };
+          msgId?: unknown;
+          userId?: unknown;
+        };
+        const queryId = callbackUpdate.queryId;
+        const data =
+          typeof callbackUpdate.data === "string"
+            ? callbackUpdate.data
+            : callbackUpdate.data?.toString() || "";
         const parts = data.split(":");
         const action = parts[0];
         const params = parts.slice(1);
 
         const chatId =
-          update.peer?.channelId?.toString() ??
-          update.peer?.chatId?.toString() ??
-          update.peer?.userId?.toString() ??
+          callbackUpdate.peer?.channelId?.toString() ??
+          callbackUpdate.peer?.chatId?.toString() ??
+          callbackUpdate.peer?.userId?.toString() ??
           "";
-        const messageId = update.msgId || 0;
-        const userId = Number(update.userId);
+        const messageId =
+          typeof callbackUpdate.msgId === "number"
+            ? callbackUpdate.msgId
+            : Number(callbackUpdate.msgId || 0);
+        const userId = Number(callbackUpdate.userId);
 
         const answer = async (text?: string, alert = false): Promise<void> => {
           try {
@@ -956,7 +985,7 @@ ${blue}  ┌──────────────────────�
           }
         };
 
-        const event: import("@teleton-agent/sdk").PluginCallbackEvent = {
+        const event: PluginCallbackEvent = {
           data,
           action,
           params,
@@ -1125,7 +1154,9 @@ export async function main(configPath?: string): Promise<void> {
     process.exit(0);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- signal handler is fire-and-forget
   process.on("SIGINT", gracefulShutdown);
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- signal handler is fire-and-forget
   process.on("SIGTERM", gracefulShutdown);
 
   await app.start();

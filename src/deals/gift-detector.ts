@@ -32,6 +32,7 @@ export class GiftDetector {
         return [];
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI gifts response is untyped
       const gifts = (result.data as any).gifts || [];
 
       // Get cached set of seen gifts for this user

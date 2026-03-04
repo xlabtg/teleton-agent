@@ -32,7 +32,7 @@ export const stonfiPoolsTool: Tool = {
 };
 export const stonfiPoolsExecutor: ToolExecutor<JettonPoolsParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address, limit = 10 } = params;
@@ -55,6 +55,7 @@ export const stonfiPoolsExecutor: ToolExecutor<JettonPoolsParams> = async (
     // Filter by jetton if provided
     if (jetton_address) {
       const targetAddress = jetton_address.toLowerCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
       pools = pools.filter((p: any) => {
         const token0 = (p.token0_address || "").toLowerCase();
         const token1 = (p.token1_address || "").toLowerCase();
@@ -69,8 +70,10 @@ export const stonfiPoolsExecutor: ToolExecutor<JettonPoolsParams> = async (
 
     // Sort by volume and limit
     pools = pools
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
       .filter((p: any) => !p.deprecated)
       .sort(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
         (a: any, b: any) =>
           parseFloat(b.volume_24h_usd || "0") - parseFloat(a.volume_24h_usd || "0")
       )
@@ -91,6 +94,7 @@ export const stonfiPoolsExecutor: ToolExecutor<JettonPoolsParams> = async (
     }
 
     // Format pools
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
     const formattedPools = pools.map((p: any, index: number) => {
       const token0Symbol = assetMap[p.token0_address] || "???";
       const token1Symbol = assetMap[p.token1_address] || "???";
@@ -116,6 +120,7 @@ export const stonfiPoolsExecutor: ToolExecutor<JettonPoolsParams> = async (
       ? `Pools for ${jetton_address}:\n\n`
       : `🏊 Top ${formattedPools.length} Pools by Volume:\n\n`;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
     formattedPools.forEach((p: any) => {
       message += `#${p.rank} ${p.pair}\n`;
       message += `   Volume 24h: $${Number(p.volume24h).toLocaleString()}\n`;

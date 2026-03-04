@@ -88,6 +88,7 @@ export const workspaceInfoExecutor: ToolExecutor<WorkspaceInfoParams> = async (
     const totalSize =
       memoryStats.size + downloadsStats.size + uploadsStats.size + tempStats.size + memesStats.size;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- filesystem stat result is dynamic
     const info: any = {
       workspaceRoot: WORKSPACE_ROOT,
       structure: {

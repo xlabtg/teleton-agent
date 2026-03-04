@@ -25,7 +25,7 @@ export const jettonHistoryTool: Tool = {
 
 export const jettonHistoryExecutor: ToolExecutor<JettonHistoryParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address } = params;

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import type { EmbeddingProvider, EmbeddingProviderConfig } from "./provider.js";
 import { NoopEmbeddingProvider } from "./provider.js";
 import { AnthropicEmbeddingProvider } from "./anthropic.js";
@@ -8,6 +7,7 @@ export * from "./provider.js";
 export * from "./anthropic.js";
 export * from "./local.js";
 export * from "./cached.js";
+export * from "./utils.js";
 
 export function createEmbeddingProvider(config: EmbeddingProviderConfig): EmbeddingProvider {
   switch (config.provider) {
@@ -30,28 +30,5 @@ export function createEmbeddingProvider(config: EmbeddingProviderConfig): Embedd
 
     default:
       throw new Error(`Unknown embedding provider: ${config.provider}`);
-  }
-}
-
-export function hashText(text: string): string {
-  return createHash("sha256").update(text).digest("hex");
-}
-
-export function serializeEmbedding(embedding: number[]): Buffer {
-  return Buffer.from(new Float32Array(embedding).buffer);
-}
-
-/**
- * Deserialize embedding from storage (handles BLOB and legacy JSON TEXT).
- */
-export function deserializeEmbedding(data: Buffer | string): number[] {
-  try {
-    if (Buffer.isBuffer(data)) {
-      const floats = new Float32Array(data.buffer, data.byteOffset, data.byteLength / 4);
-      return Array.from(floats);
-    }
-    return JSON.parse(data) as number[];
-  } catch {
-    return [];
   }
 }

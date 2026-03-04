@@ -119,6 +119,7 @@ export const visionAnalyzeExecutor: ToolExecutor<VisionAnalyzeParams> = async (
       // Validate workspace path
       let validatedPath;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- reached only when filePath is provided
         validatedPath = validateReadPath(filePath!);
       } catch (error) {
         if (error instanceof WorkspaceSecurityError) {
@@ -159,7 +160,9 @@ export const visionAnalyzeExecutor: ToolExecutor<VisionAnalyzeParams> = async (
       const gramJsClient = context.bridge.getClient().getClient();
 
       // Get the message
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- chatId/messageId guaranteed in this branch
       const messages = await gramJsClient.getMessages(chatId!, {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- messageId guaranteed in this branch
         ids: [messageId!],
       });
 

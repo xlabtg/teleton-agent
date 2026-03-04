@@ -56,7 +56,7 @@ export const dedustSwapTool: Tool = {
 };
 export const dedustSwapExecutor: ToolExecutor<DedustSwapParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { from_asset, to_asset, amount, pool_type = "volatile", slippage = 0.01 } = params;
@@ -80,7 +80,7 @@ export const dedustSwapExecutor: ToolExecutor<DedustSwapParams> = async (
       try {
         // Parse and convert to friendly format (handles both raw 0:... and friendly EQ... formats)
         fromAssetAddr = Address.parse(from_asset).toString();
-      } catch (error) {
+      } catch {
         return {
           success: false,
           error: `Invalid from_asset address: ${from_asset}`,
@@ -92,7 +92,7 @@ export const dedustSwapExecutor: ToolExecutor<DedustSwapParams> = async (
       try {
         // Parse and convert to friendly format (handles both raw 0:... and friendly EQ... formats)
         toAssetAddr = Address.parse(to_asset).toString();
-      } catch (error) {
+      } catch {
         return {
           success: false,
           error: `Invalid to_asset address: ${to_asset}`,
@@ -240,6 +240,7 @@ export const dedustSwapExecutor: ToolExecutor<DedustSwapParams> = async (
         },
       };
     }); // withTxLock
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DEX API response is untyped
   } catch (error: any) {
     const status = error?.status || error?.response?.status;
     if (status === 429 || status >= 500) {

@@ -26,6 +26,7 @@ const OP_CODES = {
 };
 
 export function parseMessageBody(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cell body type varies at runtime
   body: any
 ): { op: number; comment?: string; jettonAmount?: string; nftAddress?: string } | null {
   if (!body) return null;
@@ -172,7 +173,7 @@ export function formatTransactions(transactions: Transaction[]): FormattedTransa
       for (const outMsg of outMsgArray) {
         if (outMsg.info.type !== "internal") continue;
 
-        const info = outMsg.info as any;
+        const info = outMsg.info as { dest?: { toString(): string }; value: { coins: bigint } };
         const to = info.dest?.toString() || "unknown";
         const tonAmount = fromNano(info.value.coins);
         const parsed = parseMessageBody(outMsg.body);

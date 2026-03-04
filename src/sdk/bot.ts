@@ -33,7 +33,7 @@ export function createBotSDK(
   const handlers: PluginBotHandlers = {};
 
   function syncToRouter(): void {
-    router!.registerPlugin(pluginName, { ...handlers });
+    router?.registerPlugin(pluginName, { ...handlers });
   }
 
   const sdk: BotSDK = {
@@ -101,6 +101,7 @@ export function createBotSDK(
             replyMarkup: markup,
           });
           return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS error shape is untyped
         } catch (error: any) {
           if (error?.errorMessage === "MESSAGE_NOT_MODIFIED") return;
           log.warn(`GramJS edit failed, falling back to Grammy: ${error?.errorMessage || error}`);
@@ -116,6 +117,7 @@ export function createBotSDK(
             link_preview_options: { is_disabled: true },
             reply_markup: kb,
           });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Grammy error shape is untyped
         } catch (error: any) {
           if (error?.description?.includes("message is not modified")) return;
           log.error(`Failed to edit inline message: ${error?.description || error}`);

@@ -13,6 +13,7 @@ const DEFAULT_MAX_PAYMENT_AGE_MINUTES = 10;
 
 const OP_COMMENT = 0x0;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cell body type varies at runtime
 function parseComment(body: any): string | null {
   if (!body) return null;
   try {

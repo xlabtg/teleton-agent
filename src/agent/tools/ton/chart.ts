@@ -42,7 +42,7 @@ const PERIOD_CONFIG: Record<string, { seconds: number; points: number }> = {
 
 export const tonChartExecutor: ToolExecutor<ChartParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const token = params.token || "ton";

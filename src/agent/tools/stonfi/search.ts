@@ -44,7 +44,7 @@ export const stonfiSearchTool: Tool = {
 };
 export const stonfiSearchExecutor: ToolExecutor<JettonSearchParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { query, limit = 10 } = params;
@@ -142,7 +142,7 @@ export const stonfiSearchExecutor: ToolExecutor<JettonSearchParams> = async (
     const topResults = results.slice(0, Math.min(limit, 50));
 
     // Remove score from output
-    const cleanResults: SearchResult[] = topResults.map(({ score, ...rest }) => rest);
+    const cleanResults: SearchResult[] = topResults.map(({ score: _score, ...rest }) => rest);
 
     let message = "";
     if (cleanResults.length === 0) {

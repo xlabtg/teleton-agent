@@ -21,6 +21,7 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
       encoding: "utf8",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Node.js spawn options type doesn't include encoding
     } as any);
 
     const finish = (exitCode: number | null, signal: string | null) => {
@@ -39,10 +40,10 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
       });
     };
 
-    child.stdout!.setEncoding("utf8");
-    child.stderr!.setEncoding("utf8");
+    child.stdout?.setEncoding("utf8");
+    child.stderr?.setEncoding("utf8");
 
-    child.stdout!.on("data", (chunk: string) => {
+    child.stdout?.on("data", (chunk: string) => {
       if (stdout.length < maxOutput) {
         stdout += chunk;
         if (stdout.length > maxOutput) {
@@ -52,7 +53,7 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
       }
     });
 
-    child.stderr!.on("data", (chunk: string) => {
+    child.stderr?.on("data", (chunk: string) => {
       if (stderr.length < maxOutput) {
         stderr += chunk;
         if (stderr.length > maxOutput) {
@@ -77,11 +78,11 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
     const timeoutTimer = setTimeout(() => {
       timedOut = true;
       log.warn({ command, timeout }, "Command timed out, sending SIGTERM");
-      killProcessGroup(child.pid!, "SIGTERM");
+      if (child.pid) killProcessGroup(child.pid, "SIGTERM");
 
       killTimer = setTimeout(() => {
         log.warn({ command }, "Grace period expired, sending SIGKILL");
-        killProcessGroup(child.pid!, "SIGKILL");
+        if (child.pid) killProcessGroup(child.pid, "SIGKILL");
       }, KILL_GRACE_MS);
     }, timeout);
   });

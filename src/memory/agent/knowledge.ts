@@ -3,7 +3,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 import { KNOWLEDGE_CHUNK_SIZE } from "../../constants/limits.js";
 import type { EmbeddingProvider } from "../embeddings/provider.js";
-import { hashText, serializeEmbedding, deserializeEmbedding } from "../embeddings/index.js";
+import { hashText, serializeEmbedding } from "../embeddings/index.js";
 
 export interface KnowledgeChunk {
   id: string;

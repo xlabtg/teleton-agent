@@ -60,7 +60,7 @@ export class AgentLifecycle extends EventEmitter {
     }
 
     if (this.state === "starting") {
-      return this.startPromise!;
+      return this.startPromise ?? Promise.resolve();
     }
 
     if (this.state === "stopping") {
@@ -106,7 +106,7 @@ export class AgentLifecycle extends EventEmitter {
     }
 
     if (this.state === "stopping") {
-      return this.stopPromise!;
+      return this.stopPromise ?? Promise.resolve();
     }
 
     // If currently starting, wait for start to finish first

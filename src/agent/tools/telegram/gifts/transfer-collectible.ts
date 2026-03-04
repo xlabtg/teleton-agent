@@ -89,6 +89,7 @@ export const telegramTransferCollectibleExecutor: ToolExecutor<TransferCollectib
           message: "Collectible transferred successfully (free transfer)!",
         },
       };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     } catch (freeTransferError: any) {
       // If PAYMENT_REQUIRED, the transfer requires Stars - use payment flow
       if (freeTransferError?.errorMessage === "PAYMENT_REQUIRED") {
@@ -101,6 +102,7 @@ export const telegramTransferCollectibleExecutor: ToolExecutor<TransferCollectib
         });
 
         // Get payment form
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         const form: any = await gramJsClient.invoke(
           new Api.payments.GetPaymentForm({
             invoice: invoice,

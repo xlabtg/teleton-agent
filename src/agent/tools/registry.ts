@@ -375,7 +375,7 @@ export class ToolRegistry {
 
     // Notify Tool RAG about new tools
     if (names.length > 0) {
-      const addedTools = names.map((n) => this.tools.get(n)!.tool);
+      const addedTools = names.map((n) => this.tools.get(n)?.tool).filter((t): t is Tool => !!t);
       this.notifyToolsChanged([], addedTools);
     }
 
@@ -430,7 +430,7 @@ export class ToolRegistry {
 
     // Notify Tool RAG about replaced tools
     const removedNames = [...previousNames].filter((n) => !names.includes(n));
-    const addedTools = names.map((n) => this.tools.get(n)!.tool);
+    const addedTools = names.map((n) => this.tools.get(n)?.tool).filter((t): t is Tool => !!t);
     if (removedNames.length > 0 || addedTools.length > 0) {
       this.notifyToolsChanged(removedNames, addedTools);
     }

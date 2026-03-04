@@ -83,6 +83,7 @@ export interface RegisteredTool {
  */
 export interface ToolEntry {
   tool: Tool;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tool executors accept varied param shapes
   executor: ToolExecutor<any>;
   scope?: ToolScope;
 }
@@ -102,6 +103,7 @@ export interface PluginModule {
   /** Returns tools to register. Returns [] if the module is disabled. */
   tools(config: Config): Array<{
     tool: Tool;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- tool executors accept varied param shapes
     executor: ToolExecutor<any>;
     scope?: ToolScope;
   }>;

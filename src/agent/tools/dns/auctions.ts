@@ -24,7 +24,7 @@ export const dnsAuctionsTool: Tool = {
 };
 export const dnsAuctionsExecutor: ToolExecutor<DnsAuctionsParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { limit = 20 } = params;
@@ -53,6 +53,7 @@ export const dnsAuctionsExecutor: ToolExecutor<DnsAuctionsParams> = async (
     }
 
     // Format and limit results
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON DNS API response is untyped
     const formattedAuctions = auctions.data.slice(0, limit).map((auction: any) => {
       const currentBid = (BigInt(auction.price) / BigInt(1_000_000_000)).toString();
       const endDate = new Date(auction.date * 1000).toISOString().replace("T", " ").split(".")[0];
@@ -70,6 +71,7 @@ export const dnsAuctionsExecutor: ToolExecutor<DnsAuctionsParams> = async (
     // Create summary message
     const summary = formattedAuctions
       .map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON DNS API response is untyped
         (a: any, i: number) =>
           `${i + 1}. ${a.domain} - ${a.currentBid} (${a.bids} bids) - Ends: ${a.endDate}`
       )

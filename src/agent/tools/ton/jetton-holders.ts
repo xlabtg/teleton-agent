@@ -29,7 +29,7 @@ export const jettonHoldersTool: Tool = {
 };
 export const jettonHoldersExecutor: ToolExecutor<JettonHoldersParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address, limit = 10 } = params;
@@ -68,6 +68,7 @@ export const jettonHoldersExecutor: ToolExecutor<JettonHoldersParams> = async (
       // Ignore
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     const holders = addresses.map((h: any, index: number) => {
       const balanceRaw = BigInt(h.balance || "0");
       const balanceFormatted = Number(balanceRaw) / 10 ** decimals;
@@ -83,12 +84,14 @@ export const jettonHoldersExecutor: ToolExecutor<JettonHoldersParams> = async (
     });
 
     // Calculate concentration (top holder %)
-    const totalTop = holders.reduce(
+    const _totalTop = holders.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
       (sum: number, h: any) => sum + parseFloat(h.balance.replace(/,/g, "")),
       0
     );
 
     let message = `Top ${holders.length} holders of ${symbol}:\n\n`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     holders.forEach((h: any) => {
       const nameTag = h.name ? ` (${h.name})` : "";
       message += `#${h.rank}: ${h.balance} ${symbol}\n`;

@@ -84,9 +84,11 @@ export const telegramSendStickerExecutor: ToolExecutor<SendStickerParams> = asyn
     // Method 1: Send sticker from a sticker set by name + index
     if (hasSetInfo) {
       // Get the sticker set to access individual stickers
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       const stickerSet: any = await gramJsClient.invoke(
         new Api.messages.GetStickerSet({
           stickerset: new Api.InputStickerSetShortName({
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by hasSetInfo check
             shortName: stickerSetShortName!,
           }),
           hash: 0,
@@ -100,6 +102,7 @@ export const telegramSendStickerExecutor: ToolExecutor<SendStickerParams> = asyn
         };
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by hasSetInfo check
       if (stickerIndex! >= stickerSet.documents.length) {
         return {
           success: false,
@@ -108,10 +111,11 @@ export const telegramSendStickerExecutor: ToolExecutor<SendStickerParams> = asyn
       }
 
       // Get the specific sticker document
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by hasSetInfo + bounds check
       const stickerDoc = stickerSet.documents[stickerIndex!];
 
       // Send using SendMedia with the document
-      const result = await gramJsClient.invoke(
+      const _result = await gramJsClient.invoke(
         new Api.messages.SendMedia({
           peer: chatId,
           media: new Api.InputMediaDocument({
@@ -141,6 +145,7 @@ export const telegramSendStickerExecutor: ToolExecutor<SendStickerParams> = asyn
     // Validate workspace path
     let validatedPath;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- reached only when stickerPath is provided
       validatedPath = validateReadPath(stickerPath!);
     } catch (error) {
       if (error instanceof WorkspaceSecurityError) {

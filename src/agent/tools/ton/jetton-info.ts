@@ -24,7 +24,7 @@ export const jettonInfoTool: Tool = {
 
 export const jettonInfoExecutor: ToolExecutor<JettonInfoParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address } = params;

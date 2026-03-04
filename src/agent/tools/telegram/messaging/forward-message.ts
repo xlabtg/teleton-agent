@@ -62,7 +62,7 @@ export const telegramForwardMessageExecutor: ToolExecutor<ForwardMessageParams> 
     const gramJsClient = context.bridge.getClient().getClient();
 
     // Forward messages using GramJS API
-    const result = await gramJsClient.invoke(
+    const _result = await gramJsClient.invoke(
       new Api.messages.ForwardMessages({
         fromPeer: fromChatId,
         toPeer: toChatId,

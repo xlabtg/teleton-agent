@@ -52,8 +52,8 @@ export function createMarketplaceRoutes(deps: WebUIServerDeps) {
       // Update plugins list for the existing /api/plugins route
       deps.plugins.length = 0;
       deps.plugins.push(
-        ...deps
-          .marketplace!.modules.filter((m) => deps.toolRegistry.isPluginModule(m.name))
+        ...(deps.marketplace?.modules ?? [])
+          .filter((m) => deps.toolRegistry.isPluginModule(m.name))
           .map((m) => ({ name: m.name, version: m.version ?? "0.0.0" }))
       );
       return c.json<APIResponse<typeof result>>({ success: true, data: result });
@@ -83,8 +83,8 @@ export function createMarketplaceRoutes(deps: WebUIServerDeps) {
       // Update plugins list
       deps.plugins.length = 0;
       deps.plugins.push(
-        ...deps
-          .marketplace!.modules.filter((m) => deps.toolRegistry.isPluginModule(m.name))
+        ...(deps.marketplace?.modules ?? [])
+          .filter((m) => deps.toolRegistry.isPluginModule(m.name))
           .map((m) => ({ name: m.name, version: m.version ?? "0.0.0" }))
       );
       return c.json<APIResponse<typeof result>>({ success: true, data: result });
@@ -114,8 +114,8 @@ export function createMarketplaceRoutes(deps: WebUIServerDeps) {
       // Update plugins list
       deps.plugins.length = 0;
       deps.plugins.push(
-        ...deps
-          .marketplace!.modules.filter((m) => deps.toolRegistry.isPluginModule(m.name))
+        ...(deps.marketplace?.modules ?? [])
+          .filter((m) => deps.toolRegistry.isPluginModule(m.name))
           .map((m) => ({ name: m.name, version: m.version ?? "0.0.0" }))
       );
       return c.json<APIResponse<typeof result>>({ success: true, data: result });

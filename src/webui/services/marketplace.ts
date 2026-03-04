@@ -221,7 +221,7 @@ export class MarketplaceService {
       if (!entry) throw new Error(`Plugin "${pluginId}" not found in registry`);
 
       // Fetch remote manifest
-      const manifest = await this.fetchRemoteManifest(entry);
+      const _manifest = await this.fetchRemoteManifest(entry);
 
       // Create plugin directory
       mkdirSync(pluginDir, { recursive: true });

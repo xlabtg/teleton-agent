@@ -164,6 +164,7 @@ Thank you for trading! 🎉`,
               toId: toUser,
             })
           );
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS error shape is untyped
         } catch (freeTransferError: any) {
           // If PAYMENT_REQUIRED, use payment flow
           if (freeTransferError?.errorMessage === "PAYMENT_REQUIRED") {
@@ -174,6 +175,7 @@ Thank you for trading! 🎉`,
               toId: toUser,
             });
 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS payment form response is untyped
             const form: any = await gramJsClient.invoke(
               new Api.payments.GetPaymentForm({
                 invoice: invoice,

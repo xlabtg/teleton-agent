@@ -2,8 +2,6 @@ import {
   complete,
   type Context,
   type Message,
-  type Model,
-  type Api,
   type TextContent,
   type ToolCall,
 } from "@mariozechner/pi-ai";

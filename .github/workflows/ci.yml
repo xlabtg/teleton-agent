@@ -38,11 +38,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Format check
+        run: npm run format:check
+
+      - name: Dead code check
+        run: npm run knip
+
+      - name: Circular dependency check
+        run: npm run circular
+
+      - name: Duplicate code check
+        run: npm run dupcheck
+
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
 
-      - name: Verify CLI
+      - name: Security audit
+        run: npm run audit:ci
+
+      - name: CLI smoke test
         run: node dist/cli/index.js --help

@@ -46,7 +46,7 @@ export const telegramGetChatInfoExecutor: ToolExecutor<GetChatInfoParams> = asyn
     let entity;
     try {
       entity = await gramJsClient.getEntity(chatId);
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `Could not find chat "${chatId}"`,
@@ -123,7 +123,7 @@ export const telegramGetChatInfoExecutor: ToolExecutor<GetChatInfoParams> = asyn
             isDeactivated: chat.deactivated || false,
           };
         }
-      } catch (error) {
+      } catch {
         // If we can't get full info, return basic info
         chatInfo = {
           ...chatInfo,

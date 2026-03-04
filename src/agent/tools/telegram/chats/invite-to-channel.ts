@@ -92,7 +92,7 @@ export const telegramInviteToChannelExecutor: ToolExecutor<InviteToChannelParams
         } else {
           failed.push(`${userId} (not a user)`);
         }
-      } catch (error) {
+      } catch {
         failed.push(`${userId} (not found)`);
       }
     }
@@ -114,7 +114,7 @@ export const telegramInviteToChannelExecutor: ToolExecutor<InviteToChannelParams
         } else {
           failed.push(`@${cleanUsername} (not a user)`);
         }
-      } catch (error) {
+      } catch {
         failed.push(`@${username.replace("@", "")} (not found)`);
       }
     }
@@ -127,7 +127,7 @@ export const telegramInviteToChannelExecutor: ToolExecutor<InviteToChannelParams
     }
 
     // Invite users to channel
-    const result = await gramJsClient.invoke(
+    const _result = await gramJsClient.invoke(
       new Api.channels.InviteToChannel({
         channel: channel,
         users: users,
@@ -147,6 +147,7 @@ export const telegramInviteToChannelExecutor: ToolExecutor<InviteToChannelParams
         failedCount: failed.length,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     log.error({ err: error }, "Error inviting to channel");
 

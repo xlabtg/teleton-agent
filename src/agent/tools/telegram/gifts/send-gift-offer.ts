@@ -52,6 +52,7 @@ export const telegramSendGiftOfferExecutor: ToolExecutor<SendGiftOfferParams> = 
       new Api.payments.SendStarGiftOffer({
         peer,
         slug,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         price: new Api.StarsAmount({ amount: BigInt(price) as any, nanos: 0 }),
         duration,
         randomId: randomLong(),
@@ -71,6 +72,7 @@ export const telegramSendGiftOfferExecutor: ToolExecutor<SendGiftOfferParams> = 
         message: `Offer of ${price} Stars sent for NFT ${slug}. Valid for ${Math.round(duration / 3600)}h.`,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     const errorMsg = getErrorMessage(error);
 

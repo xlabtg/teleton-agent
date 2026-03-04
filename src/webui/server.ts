@@ -72,6 +72,7 @@ export class WebUIServer {
   }
 
   /** Set an HttpOnly session cookie */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Hono context type
   private setSessionCookie(c: any): void {
     setCookie(c, COOKIE_NAME, this.authToken, {
       path: "/",
@@ -289,7 +290,7 @@ export class WebUIServer {
         // Listen for state changes
         const onStateChange = (event: StateChangeEvent) => {
           if (aborted) return;
-          stream.writeSSE({
+          void stream.writeSSE({
             event: "status",
             id: String(event.timestamp),
             data: JSON.stringify({
@@ -410,7 +411,7 @@ export class WebUIServer {
   async stop(): Promise<void> {
     if (this.server) {
       return new Promise((resolve) => {
-        this.server!.close(() => {
+        this.server?.close(() => {
           logInterceptor.uninstall();
           log.info("WebUI server stopped");
           resolve();

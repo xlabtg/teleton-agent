@@ -66,10 +66,11 @@ export async function sendTon(params: SendTonParams): Promise<string | null> {
       log.info(`Sent ${amount} TON to ${toAddress.slice(0, 8)}... - seqno: ${seqno}`);
 
       return pseudoHash;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Invalidate node cache on 429/5xx so next attempt picks a fresh node
-      const status = error?.status || error?.response?.status;
-      if (status === 429 || status >= 500) {
+      const err = error as { status?: number; response?: { status?: number } };
+      const status = err?.status || err?.response?.status;
+      if (status === 429 || (status !== undefined && status >= 500)) {
         invalidateTonClientCache();
       }
       log.error({ err: error }, "Error sending TON");

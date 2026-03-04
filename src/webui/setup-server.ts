@@ -20,6 +20,7 @@ import { randomBytes } from "node:crypto";
 import { readFileSync as readYaml, writeFileSync } from "node:fs";
 import YAML from "yaml";
 import { TELETON_ROOT } from "../workspace/paths.js";
+import type { Server as HttpServer } from "node:http";
 import { createLogger } from "../utils/logger.js";
 
 const log = createLogger("Setup");
@@ -241,8 +242,8 @@ export class SetupServer {
     if (this.server) {
       return new Promise((resolve) => {
         // Force-close keep-alive connections so we don't wait ~30s for them to expire
-        (this.server as unknown as import("node:http").Server).closeAllConnections();
-        this.server!.close(() => {
+        (this.server as unknown as HttpServer).closeAllConnections();
+        this.server?.close(() => {
           log.info("Setup server stopped");
           resolve();
         });

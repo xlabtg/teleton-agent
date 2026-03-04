@@ -13,8 +13,8 @@ export const tonGetBalanceTool: Tool = {
   category: "data-bearing",
 };
 export const tonGetBalanceExecutor: ToolExecutor<{}> = async (
-  params,
-  context
+  _params,
+  _context
 ): Promise<ToolResult> => {
   try {
     const address = getWalletAddress();

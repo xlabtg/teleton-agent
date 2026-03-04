@@ -42,7 +42,7 @@ export const jettonSendTool: Tool = {
 };
 export const jettonSendExecutor: ToolExecutor<JettonSendParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address, to, amount, comment } = params;
@@ -79,6 +79,7 @@ export const jettonSendExecutor: ToolExecutor<JettonSendParams> = async (
     const jettonsData = await jettonsResponse.json();
 
     // Find the jetton in our balances (safe: skip entries with malformed addresses)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     const jettonBalance = jettonsData.balances?.find((b: any) => {
       if (b.jetton.address.toLowerCase() === jetton_address.toLowerCase()) return true;
       try {

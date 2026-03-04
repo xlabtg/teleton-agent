@@ -33,8 +33,13 @@ interface WorkspaceInfo {
   root: string;
   totalFiles: number;
   totalSize: number;
+  truncated?: boolean;
 }
 
+const MAX_SCAN_DEPTH = 10;
+const MAX_SCAN_ENTRIES = 5000;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Hono context type
 function errorResponse(c: any, error: unknown, status: number = 500) {
   const message = getErrorMessage(error);
   const code = error instanceof WorkspaceSecurityError ? 403 : status;
@@ -53,45 +58,63 @@ const IMAGE_MIME_TYPES: Record<string, string> = {
   ".ico": "image/x-icon",
 };
 
-/** Recursively count files and total size */
-function getWorkspaceStats(dir: string): { files: number; size: number } {
-  let files = 0;
-  let size = 0;
-
-  if (!existsSync(dir)) return { files, size };
+/** Recursively count files and total size (bounded) */
+function getWorkspaceStats(
+  dir: string,
+  depth = 0,
+  state = { files: 0, size: 0, truncated: false }
+): { files: number; size: number; truncated: boolean } {
+  if (!existsSync(dir)) return state;
+  if (depth >= MAX_SCAN_DEPTH || state.files >= MAX_SCAN_ENTRIES) {
+    state.truncated = true;
+    return state;
+  }
 
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (state.files >= MAX_SCAN_ENTRIES) {
+      state.truncated = true;
+      return state;
+    }
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      const sub = getWorkspaceStats(fullPath);
-      files += sub.files;
-      size += sub.size;
+      getWorkspaceStats(fullPath, depth + 1, state);
     } else if (entry.isFile()) {
-      files++;
+      state.files++;
       try {
-        size += statSync(fullPath).size;
+        state.size += statSync(fullPath).size;
       } catch {
         // skip inaccessible files
       }
     }
   }
 
-  return { files, size };
+  return state;
 }
 
-/** List entries in a directory, optionally recursive */
-function listDir(absPath: string, recursive: boolean): FileEntry[] {
-  if (!existsSync(absPath)) return [];
-
-  const entries: FileEntry[] = [];
+/** List entries in a directory, optionally recursive (bounded) */
+function listDir(
+  absPath: string,
+  recursive: boolean,
+  depth = 0,
+  state = { entries: [] as FileEntry[], truncated: false }
+): { entries: FileEntry[]; truncated: boolean } {
+  if (!existsSync(absPath)) return state;
+  if (depth >= MAX_SCAN_DEPTH || state.entries.length >= MAX_SCAN_ENTRIES) {
+    state.truncated = true;
+    return state;
+  }
 
   for (const entry of readdirSync(absPath, { withFileTypes: true })) {
+    if (state.entries.length >= MAX_SCAN_ENTRIES) {
+      state.truncated = true;
+      return state;
+    }
     const fullPath = join(absPath, entry.name);
     const relPath = relative(WORKSPACE_ROOT, fullPath);
 
     try {
       const stats = statSync(fullPath);
-      entries.push({
+      state.entries.push({
         name: entry.name,
         path: relPath,
         isDirectory: entry.isDirectory(),
@@ -100,14 +123,14 @@ function listDir(absPath: string, recursive: boolean): FileEntry[] {
       });
 
       if (recursive && entry.isDirectory()) {
-        entries.push(...listDir(fullPath, true));
+        listDir(fullPath, true, depth + 1, state);
       }
     } catch {
       // skip inaccessible entries
     }
   }
 
-  return entries;
+  return state;
 }
 
 export function createWorkspaceRoutes(_deps: WebUIServerDeps) {
@@ -136,15 +159,21 @@ export function createWorkspaceRoutes(_deps: WebUIServerDeps) {
         return c.json(response);
       }
 
-      const entries = listDir(validated.absolutePath, recursive);
+      const result = listDir(validated.absolutePath, recursive);
 
       // Sort: directories first, then alphabetically
-      entries.sort((a, b) => {
+      result.entries.sort((a, b) => {
         if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
 
-      const response: APIResponse<FileEntry[]> = { success: true, data: entries };
+      const response: APIResponse<{ entries: FileEntry[]; truncated?: boolean }> = {
+        success: true,
+        data: {
+          entries: result.entries,
+          ...(result.truncated && { truncated: true }),
+        },
+      };
       return c.json(response);
     } catch (error) {
       return errorResponse(c, error);
@@ -365,6 +394,7 @@ export function createWorkspaceRoutes(_deps: WebUIServerDeps) {
           root: WORKSPACE_ROOT,
           totalFiles: stats.files,
           totalSize: stats.size,
+          ...(stats.truncated && { truncated: true }),
         },
       };
       return c.json(response);

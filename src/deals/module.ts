@@ -1,5 +1,5 @@
 import { join } from "path";
-import type { PluginModule, PluginContext } from "../agent/tools/types.js";
+import type { PluginModule } from "../agent/tools/types.js";
 import { initDealsConfig, DEALS_CONFIG } from "./config.js";
 import { DealBot, VerificationPoller } from "../bot/index.js";
 import { createLogger } from "../utils/logger.js";

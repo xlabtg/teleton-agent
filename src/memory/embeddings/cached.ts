@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import type { EmbeddingProvider } from "./provider.js";
-import { hashText, serializeEmbedding, deserializeEmbedding } from "./index.js";
+import { hashText, serializeEmbedding, deserializeEmbedding } from "./utils.js";
 import { createLogger } from "../../utils/logger.js";
 import {
   EMBEDDING_CACHE_MAX_ENTRIES,

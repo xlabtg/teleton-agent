@@ -30,7 +30,7 @@ function estimateMinPrice(length: number): string {
 }
 export const dnsCheckExecutor: ToolExecutor<DnsCheckParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     let { domain } = params;
@@ -107,6 +107,7 @@ export const dnsCheckExecutor: ToolExecutor<DnsCheckParams> = async (
 
     if (auctionsResponse.ok) {
       const auctions = await auctionsResponse.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON DNS API response is untyped
       const auction = auctions.data?.find((a: any) => a.domain === fullDomain);
 
       if (auction) {

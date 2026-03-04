@@ -66,6 +66,7 @@ export const telegramCreateChannelExecutor: ToolExecutor<CreateChannelParams> = 
     const gramJsClient = context.bridge.getClient().getClient();
 
     // Create channel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const result: any = await gramJsClient.invoke(
       new Api.channels.CreateChannel({
         title,
@@ -102,6 +103,7 @@ export const telegramCreateChannelExecutor: ToolExecutor<CreateChannelParams> = 
           );
           data.username = clean;
           data.link = `https://t.me/${clean}`;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         } catch (usernameError: any) {
           const msg = getErrorMessage(usernameError);
           if (msg.includes("USERNAME_OCCUPIED")) {

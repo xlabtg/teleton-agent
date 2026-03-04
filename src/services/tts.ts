@@ -230,7 +230,7 @@ async function generatePiperTTS(text: string, voice: string): Promise<TTSResult>
 
     // Cleanup WAV
     unlinkSync(wavPath);
-  } catch (err) {
+  } catch {
     // If ffmpeg fails, fallback to WAV
     return {
       filePath: wavPath,

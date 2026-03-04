@@ -136,6 +136,7 @@ export function createDnsSDK(log: PluginLogger): DnsSDK {
         }
 
         const data = await response.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TonAPI auction response is untyped
         return (data.data || []).map((a: any) => ({
           domain: a.domain || "",
           nftAddress: a.nft?.address || "",
@@ -195,7 +196,10 @@ export function createDnsSDK(log: PluginLogger): DnsSDK {
       }
 
       try {
-        await sendWalletMessage(Address.parse(checkResult.nftAddress!), toNano(amount.toString()));
+        await sendWalletMessage(
+          Address.parse(checkResult.nftAddress as string),
+          toNano(amount.toString())
+        );
         return { domain: normalized, bidAmount: amount.toString(), success: true };
       } catch (err) {
         if (err instanceof PluginSDKError) throw err;

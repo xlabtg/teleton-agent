@@ -52,6 +52,7 @@ export const telegramSetPersonalChannelExecutor: ToolExecutor<SetPersonalChannel
         channelId: params.channelId || null,
       },
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
   } catch (error: any) {
     if (error.errorMessage === "CHANNEL_INVALID") {
       return {

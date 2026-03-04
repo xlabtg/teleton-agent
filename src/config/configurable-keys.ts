@@ -618,6 +618,7 @@ function assertSafePath(parts: string[]): void {
   }
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- generic config traversal requires any for dynamic dot-notation paths */
 export function getNestedValue(obj: Record<string, any>, path: string): unknown {
   const parts = path.split(".");
   assertSafePath(parts);
@@ -654,9 +655,11 @@ export function deleteNestedValue(obj: Record<string, any>, path: string): void 
     delete current[parts[parts.length - 1]];
   }
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // ── Raw YAML read/write (preserves ~ paths, no expansion) ─────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- YAML parse returns arbitrary structure
 export function readRawConfig(configPath: string): Record<string, any> {
   const fullPath = expandPath(configPath);
   if (!existsSync(fullPath)) {
@@ -666,9 +669,11 @@ export function readRawConfig(configPath: string): Record<string, any> {
   if (!raw || typeof raw !== "object") {
     throw new Error(`Invalid config file: ${fullPath}`);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- YAML parse returns arbitrary structure
   return raw as Record<string, any>;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- YAML config is untyped at this layer
 export function writeRawConfig(raw: Record<string, any>, configPath: string): void {
   const clone = { ...raw };
   delete clone.market;

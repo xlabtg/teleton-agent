@@ -19,13 +19,10 @@ import {
   expireDeal,
 } from "./services/deal-service.js";
 import {
-  buildProposalMessage,
   buildAcceptedMessage,
   buildVerifyingMessage,
-  buildCompletedMessage,
   buildDeclinedMessage,
   buildExpiredMessage,
-  buildWrongUserMessage,
   buildNotFoundMessage,
   buildMessageForState,
 } from "./services/message-builder.js";
@@ -174,10 +171,11 @@ export class DealBot {
             try {
               await this.editViaGramJS(inlineMessageId, text, buttons);
               edited = true;
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errMsg = (error as Record<string, unknown>)?.errorMessage;
               log.warn(
                 { err: error },
-                `[Bot] chosen_inline_result GramJS edit failed: ${error?.errorMessage || error}`
+                `[Bot] chosen_inline_result GramJS edit failed: ${errMsg || error}`
               );
             }
           }
@@ -190,10 +188,11 @@ export class DealBot {
                 link_preview_options: { is_disabled: true },
                 reply_markup: keyboard,
               });
-            } catch (error: any) {
+            } catch (error: unknown) {
+              const errDesc = (error as Record<string, unknown>)?.description;
               log.error(
                 { err: error },
-                `[Bot] chosen_inline_result Grammy fallback failed: ${error?.description || error}`
+                `[Bot] chosen_inline_result Grammy fallback failed: ${errDesc || error}`
               );
             }
           }
@@ -305,7 +304,7 @@ export class DealBot {
     });
   }
 
-  private async handleAccept(ctx: any, deal: DealContext): Promise<void> {
+  private async handleAccept(ctx: Context, deal: DealContext): Promise<void> {
     if (deal.status !== "proposed") {
       await ctx.answerCallbackQuery({ text: "Already processed" });
       return;
@@ -324,7 +323,7 @@ export class DealBot {
     log.info(`✅ [Bot] Deal ${deal.dealId} accepted by ${deal.userId}`);
   }
 
-  private async handleDecline(ctx: any, deal: DealContext): Promise<void> {
+  private async handleDecline(ctx: Context, deal: DealContext): Promise<void> {
     if (deal.status !== "proposed") {
       await ctx.answerCallbackQuery({ text: "Already processed" });
       return;
@@ -341,7 +340,7 @@ export class DealBot {
     log.info(`❌ [Bot] Deal ${deal.dealId} declined by ${deal.userId}`);
   }
 
-  private async handleSent(ctx: any, deal: DealContext): Promise<void> {
+  private async handleSent(ctx: Context, deal: DealContext): Promise<void> {
     if (deal.status !== "accepted") {
       await ctx.answerCallbackQuery({ text: "Not available" });
       return;
@@ -358,7 +357,7 @@ export class DealBot {
     log.info(`📤 [Bot] Deal ${deal.dealId} payment claimed by ${deal.userId}`);
   }
 
-  private async handleCopyAddress(ctx: any): Promise<void> {
+  private async handleCopyAddress(ctx: Context): Promise<void> {
     const agentWallet = getWalletAddress() || "";
     await ctx.answerCallbackQuery({
       text: `📋 Address: ${agentWallet}`,
@@ -366,14 +365,14 @@ export class DealBot {
     });
   }
 
-  private async handleCopyMemo(ctx: any, deal: DealContext): Promise<void> {
+  private async handleCopyMemo(ctx: Context, deal: DealContext): Promise<void> {
     await ctx.answerCallbackQuery({
       text: `📋 Memo: ${deal.dealId}`,
       show_alert: true,
     });
   }
 
-  private async handleRefresh(ctx: any, deal: DealContext): Promise<void> {
+  private async handleRefresh(ctx: Context, deal: DealContext): Promise<void> {
     // Reload deal from DB
     const freshDeal = getDeal(this.db, deal.dealId);
     if (!freshDeal) {
@@ -390,7 +389,7 @@ export class DealBot {
   }
 
   private async editInlineMessage(
-    ctx: any,
+    ctx: Context,
     text: string,
     buttons: StyledButtonDef[][]
   ): Promise<void> {
@@ -401,11 +400,12 @@ export class DealBot {
       try {
         await this.editViaGramJS(inlineMsgId, text, buttons);
         return;
-      } catch (error: any) {
-        if (error?.errorMessage === "MESSAGE_NOT_MODIFIED") return;
+      } catch (error: unknown) {
+        const errMsg = (error as Record<string, unknown>)?.errorMessage;
+        if (errMsg === "MESSAGE_NOT_MODIFIED") return;
         log.warn(
           { err: error },
-          `[Bot] GramJS edit failed, falling back to Grammy: ${error?.errorMessage || error}`
+          `[Bot] GramJS edit failed, falling back to Grammy: ${errMsg || error}`
         );
       }
     }
@@ -417,8 +417,9 @@ export class DealBot {
         link_preview_options: { is_disabled: true },
         reply_markup: keyboard,
       });
-    } catch (error: any) {
-      if (error?.description?.includes("message is not modified")) return;
+    } catch (error: unknown) {
+      const desc = (error as Record<string, string>)?.description;
+      if (desc?.includes("message is not modified")) return;
       log.error({ err: error }, "[Bot] Failed to edit inline message");
     }
   }
@@ -432,11 +433,12 @@ export class DealBot {
       try {
         await this.editViaGramJS(inlineMessageId, text, buttons);
         return;
-      } catch (error: any) {
-        if (error?.errorMessage === "MESSAGE_NOT_MODIFIED") return;
+      } catch (error: unknown) {
+        const errMsg = (error as Record<string, unknown>)?.errorMessage;
+        if (errMsg === "MESSAGE_NOT_MODIFIED") return;
         log.warn(
           { err: error },
-          `[Bot] GramJS edit failed, falling back to Grammy: ${error?.errorMessage || error}`
+          `[Bot] GramJS edit failed, falling back to Grammy: ${errMsg || error}`
         );
       }
     }

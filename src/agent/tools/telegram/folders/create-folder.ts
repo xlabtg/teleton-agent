@@ -100,6 +100,7 @@ export const telegramCreateFolderExecutor: ToolExecutor<CreateFolderParams> = as
     const newId = usedIds.length > 0 ? Math.max(...usedIds) + 1 : 2;
 
     // Create new folder (using any to bypass strict type checking)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const filterData: any = {
       id: newId,
       title: new Api.TextWithEntities({ text: title, entities: [] }),

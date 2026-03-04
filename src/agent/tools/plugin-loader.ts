@@ -201,7 +201,7 @@ export function adaptPlugin(
 
         // Run plugin's custom migrations if provided
         if (hasMigrate) {
-          raw.migrate!(pluginDb);
+          raw.migrate?.(pluginDb);
 
           const pluginTables = (
             pluginDb
@@ -371,7 +371,7 @@ export async function loadEnhancedPlugins(
   config: Config,
   loadedModuleNames: string[],
   sdkDeps: SDKDependencies,
-  db?: import("better-sqlite3").Database
+  db?: import("better-sqlite3").Database // eslint-disable-line @typescript-eslint/consistent-type-imports
 ): Promise<LoadEnhancedPluginsResult> {
   const hookRegistry = new HookRegistry();
   const pluginsDir = WORKSPACE_PATHS.PLUGINS_DIR;

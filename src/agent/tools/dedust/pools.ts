@@ -69,7 +69,7 @@ export const dedustPoolsTool: Tool = {
 };
 export const dedustPoolsExecutor: ToolExecutor<DedustPoolsParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const { jetton_address, pool_type, limit = 20 } = params;

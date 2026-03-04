@@ -42,7 +42,7 @@ export const dnsSetSiteTool: Tool = {
 
 export const dnsSetSiteExecutor: ToolExecutor<DnsSetSiteParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     let { domain, adnl_address } = params;

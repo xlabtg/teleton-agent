@@ -202,7 +202,7 @@ export class ToolIndex {
             const e = entries[i];
             insertTool.run(e.name, e.description, e.searchText);
             if (insertVec && embeddings[i]?.length > 0) {
-              deleteVec!.run(e.name);
+              deleteVec?.run(e.name);
               insertVec.run(e.name, serializeEmbedding(embeddings[i]));
             }
           }

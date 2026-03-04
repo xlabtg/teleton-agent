@@ -340,8 +340,8 @@ export function shouldResetSession(session: SessionEntry, policy: SessionResetPo
 
   return false;
 }
-export function resetSessionWithPolicy(chatId: string, policy: SessionResetPolicy): SessionEntry {
-  const newSession = resetSession(chatId);
+export function resetSessionWithPolicy(chatId: string, _policy: SessionResetPolicy): SessionEntry {
+  resetSession(chatId);
   const today = new Date().toISOString().split("T")[0];
 
   return updateSession(chatId, {

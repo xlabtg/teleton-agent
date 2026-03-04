@@ -68,11 +68,13 @@ export const telegramSendGiftExecutor: ToolExecutor<SendGiftParams> = async (
 
     const invoiceData = {
       peer: user,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
       giftId: BigInt(giftId) as any,
       hideName: anonymous,
       message: message ? new Api.TextWithEntities({ text: message, entities: [] }) : undefined,
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
     const form: any = await gramJsClient.invoke(
       new Api.payments.GetPaymentForm({
         invoice: new Api.InputInvoiceStarGift(invoiceData),

@@ -79,7 +79,7 @@ function listDir(dirPath: string, recursive: boolean, filter: string): FileInfo[
         results.push(...listDir(fullPath, recursive, filter));
       }
     }
-  } catch (error) {
+  } catch {
     // Ignore permission errors
   }
 

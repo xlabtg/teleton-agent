@@ -67,6 +67,7 @@ export const telegramGetRepliesExecutor: ToolExecutor<GetRepliesParams> = async 
         limit: limit,
         maxId: 0,
         minId: 0,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS API response is untyped
         hash: 0n as any,
       })
     );

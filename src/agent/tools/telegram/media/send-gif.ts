@@ -85,10 +85,12 @@ export const telegramSendGifExecutor: ToolExecutor<SendGifParams> = async (
 
     // Method 1: Send GIF from inline bot result (@gif)
     if (hasInlineResult) {
-      const result = await gramJsClient.invoke(
+      const _result = await gramJsClient.invoke(
         new Api.messages.SendInlineBotResult({
           peer: chatId,
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by hasInlineResult check
           queryId: toLong(BigInt(queryId!)),
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guarded by hasInlineResult check
           id: resultId!,
           randomId: randomLong(),
           replyTo: replyToId ? new Api.InputReplyToMessage({ replyToMsgId: replyToId }) : undefined,
@@ -109,6 +111,7 @@ export const telegramSendGifExecutor: ToolExecutor<SendGifParams> = async (
     // Validate workspace path
     let validatedPath;
     try {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- reached only when gifPath is provided
       validatedPath = validateReadPath(gifPath!);
     } catch (error) {
       if (error instanceof WorkspaceSecurityError) {

@@ -22,7 +22,7 @@ export const dnsResolveTool: Tool = {
 };
 export const dnsResolveExecutor: ToolExecutor<DnsResolveParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     let { domain } = params;

@@ -36,14 +36,18 @@ export function decodeInlineMessageId(encoded: string): Api.TypeInputBotInlineMe
   if (buf.length === 20) {
     return new Api.InputBotInlineMessageID({
       dcId: buf.readInt32LE(0),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat
       id: buf.readBigInt64LE(4) as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat
       accessHash: buf.readBigInt64LE(12) as any,
     });
   } else if (buf.length === 24) {
     return new Api.InputBotInlineMessageID64({
       dcId: buf.readInt32LE(0),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat
       ownerId: buf.readBigInt64LE(4) as any,
       id: buf.readInt32LE(12),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat
       accessHash: buf.readBigInt64LE(16) as any,
     });
   }
@@ -107,8 +111,8 @@ export class GramJSBotClient {
         this.connected = true;
         this.saveSession();
         return;
-      } catch (error: any) {
-        const isTransient = error?.code === -500;
+      } catch (error: unknown) {
+        const isTransient = (error as Record<string, unknown>)?.code === -500;
         if (isTransient && attempt < TELEGRAM_CONNECTION_RETRIES) {
           const delay = GRAMJS_CONNECT_RETRY_DELAY_MS * attempt;
           log.warn(

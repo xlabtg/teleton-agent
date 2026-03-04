@@ -56,7 +56,7 @@ interface NftItem {
 
 export const nftListExecutor: ToolExecutor<NftListParams> = async (
   params,
-  context
+  _context
 ): Promise<ToolResult> => {
   try {
     const address = params.address || getWalletAddress();
@@ -91,15 +91,19 @@ export const nftListExecutor: ToolExecutor<NftListParams> = async (
         error: "Invalid API response: missing nft_items array",
       };
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     const rawItems: any[] = data.nft_items;
 
     // Filter out blacklisted NFTs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     const filtered = rawItems.filter((item: any) => item.trust !== "blacklist");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
     const nfts: NftItem[] = filtered.map((item: any) => {
       const meta = item.metadata || {};
       const coll = item.collection || {};
       const sale = item.sale;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TON API response is untyped
       const previews: any[] = item.previews || [];
 
       // Pick a mid-resolution preview (500x500 if available)

@@ -192,6 +192,7 @@ export function createTelegramMessagesSDK(bridge: TelegramBridge, log: PluginLog
             limit,
             maxId: 0,
             minId: 0,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat requires bigint cast
             hash: 0n as any,
           })
         );
@@ -319,6 +320,7 @@ export function createTelegramMessagesSDK(bridge: TelegramBridge, log: PluginLog
         const gramJsClient = getClient();
         const Api = await getApi();
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS document attributes are untyped
         const attributes: any[] = [];
         if (opts?.fileName) {
           attributes.push(new Api.DocumentAttributeFilename({ fileName: opts.fileName }));
@@ -399,6 +401,7 @@ export function createTelegramMessagesSDK(bridge: TelegramBridge, log: PluginLog
         }
 
         // Check file size before downloading to prevent OOM
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS media type is a union; narrowing not practical here
         const doc = (messages[0].media as any)?.document;
         if (doc?.size && Number(doc.size) > MAX_DOWNLOAD_SIZE) {
           throw new PluginSDKError(
@@ -408,6 +411,7 @@ export function createTelegramMessagesSDK(bridge: TelegramBridge, log: PluginLog
         }
 
         const buffer = await gramJsClient.downloadMedia(messages[0], {});
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS downloadMedia returns Buffer | string | undefined
         return buffer ? Buffer.from(buffer as any) : null;
       } catch (err) {
         if (err instanceof PluginSDKError) throw err;
@@ -430,6 +434,7 @@ export function createTelegramMessagesSDK(bridge: TelegramBridge, log: PluginLog
         const result = await gramJsClient.invoke(
           new Api.messages.GetScheduledHistory({
             peer,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GramJS BigInteger compat requires bigint cast
             hash: 0n as any,
           })
         );
