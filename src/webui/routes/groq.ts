@@ -6,7 +6,7 @@ import {
   type GroqModelType,
 } from "../../providers/groq/modelRegistry.js";
 import { testGroqApiKey, groqListModels } from "../../providers/groq/GroqTextProvider.js";
-import { groqTranscribe } from "../../providers/groq/GroqSTTProvider.js";
+import { GROQ_API_BASE, groqTranscribe } from "../../providers/groq/GroqSTTProvider.js";
 import { groqSpeak, GROQ_TTS_VOICES } from "../../providers/groq/GroqTTSProvider.js";
 import { getGroqSttModels, getGroqTtsModels } from "../../config/model-catalog.js";
 import { getNestedValue, readRawConfig } from "../../config/configurable-keys.js";
@@ -67,6 +67,7 @@ export function createGroqRoutes(deps: WebUIServerDeps) {
   });
 
   // POST /api/groq/test — test API key connectivity
+  // Returns 200 on success, 400 for missing key, 401 for auth errors, 429 for rate limits, 502 for server errors.
   app.post("/test", async (c) => {
     let body: { apiKey?: string };
     try {
@@ -80,12 +81,48 @@ export function createGroqRoutes(deps: WebUIServerDeps) {
       return c.json({ success: false, error: "No API key provided" } as APIResponse, 400);
     }
 
-    const error = await testGroqApiKey(apiKey);
-    if (error) {
-      return c.json({ success: false, error } as APIResponse, 422);
+    const result = await testGroqApiKey(apiKey);
+    if (!result.valid) {
+      // Map Groq API status codes to appropriate HTTP responses
+      const httpStatus =
+        result.statusCode === 401
+          ? 401
+          : result.statusCode === 403
+            ? 403
+            : result.statusCode === 429
+              ? 429
+              : result.statusCode != null && result.statusCode >= 500
+                ? 502
+                : 400;
+
+      return c.json(
+        {
+          success: false,
+          error: result.error,
+          hint: result.hint,
+        } as APIResponse & { hint: string | null },
+        httpStatus
+      );
     }
 
     return c.json({ success: true, data: { valid: true } } as APIResponse);
+  });
+
+  // GET /api/groq/debug — diagnostic info (baseURL, headers shape, configured model)
+  // Does not expose the API key value.
+  app.get("/debug", (c) => {
+    const apiKey = getGroqApiKey(deps);
+    return c.json({
+      success: true,
+      data: {
+        baseURL: GROQ_API_BASE,
+        authHeaderShape: apiKey
+          ? "Authorization: Bearer gsk_***"
+          : "Authorization: Bearer <not set>",
+        apiKeyConfigured: !!apiKey,
+        apiKeyPrefix: apiKey ? apiKey.slice(0, 4) : null,
+      },
+    } as APIResponse);
   });
 
   // POST /api/groq/transcribe — STT: transcribe audio buffer

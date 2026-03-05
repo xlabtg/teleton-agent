@@ -142,15 +142,68 @@ export async function groqListModels(apiKey: string): Promise<GroqModelListEntry
 }
 
 /**
- * Test a Groq API key by calling GET /models.
- * Returns an error message string on failure, or null on success.
- * Using /models avoids 422 errors caused by invalid model or body schema issues.
+ * Structured result from API key test, including HTTP status and user hint.
  */
-export async function testGroqApiKey(apiKey: string): Promise<string | null> {
-  try {
-    await groqListModels(apiKey);
-    return null;
-  } catch (err) {
-    return err instanceof Error ? err.message : String(err);
+export interface GroqKeyTestResult {
+  /** true if key is valid */
+  valid: boolean;
+  /** Error message on failure, null on success */
+  error: string | null;
+  /** HTTP status code from Groq API (null on success) */
+  statusCode: number | null;
+  /** Human-readable hint for the specific error type */
+  hint: string | null;
+}
+
+/**
+ * Test a Groq API key by calling GET /models.
+ * Returns a structured result with HTTP status and hint for error differentiation.
+ * Using /models avoids 422 errors caused by invalid model or body schema issues.
+ *
+ * Error differentiation:
+ * - 401: Invalid API key
+ * - 403: API key lacks permission (plan restriction)
+ * - 429: Rate limit exceeded
+ * - 422: Bad request schema (should not happen with GET /models)
+ * - 5xx: Groq server error
+ */
+export async function testGroqApiKey(apiKey: string): Promise<GroqKeyTestResult> {
+  if (!apiKey) {
+    return {
+      valid: false,
+      error: "No API key provided",
+      statusCode: null,
+      hint: "Provide a Groq API key (starts with gsk_)",
+    };
   }
+
+  const response = await fetch(`${GROQ_API_BASE}/models`, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  }).catch((err: unknown) => {
+    throw new Error(`Network error: ${err instanceof Error ? err.message : String(err)}`);
+  });
+
+  if (response.ok) {
+    return { valid: true, error: null, statusCode: null, hint: null };
+  }
+
+  const statusCode = response.status;
+  const errorBody = await response.text().catch(() => "");
+  const errorType = parseGroqErrorType(statusCode);
+
+  const hints: Record<number, string> = {
+    401: "Invalid API key. Check that your key starts with gsk_ and is correct.",
+    403: "API key valid but access denied. Your plan may not support this endpoint.",
+    422: "Request schema error. This should not occur with GET /models — please report this.",
+    429: "Rate limit exceeded. Wait a moment and try again.",
+  };
+  const hint =
+    hints[statusCode] ?? (statusCode >= 500 ? "Groq server error. Try again later." : null);
+
+  const msg = `Groq API error (${statusCode} ${errorType}): ${errorBody}`;
+  log.warn(`Key test failed: ${msg}`);
+
+  return { valid: false, error: msg, statusCode, hint };
 }
