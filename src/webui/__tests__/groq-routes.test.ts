@@ -80,6 +80,88 @@ describe("GET /groq/debug", () => {
     expect(json.data.apiKeyConfigured).toBe(false);
     expect(json.data.authHeaderShape).toContain("not set");
   });
+
+  it("reports apiKeyFormatValid=true for valid gsk_ keys", async () => {
+    setupWithApiKey("gsk_validkey1234567890abc");
+    const app = buildApp();
+    const res = await app.request("/groq/debug");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.apiKeyFormatValid).toBe(true);
+    expect(json.data.troubleshooting).toBeNull();
+  });
+
+  it("reports apiKeyFormatValid=false for non-gsk keys", async () => {
+    setupWithApiKey("sk-invalid-key");
+    const app = buildApp();
+    const res = await app.request("/groq/debug");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.apiKeyFormatValid).toBe(false);
+    expect(json.data.troubleshooting).toContain("gsk_");
+  });
+
+  it("includes model registry counts", async () => {
+    setupWithApiKey("gsk_testkey123456789012");
+    const app = buildApp();
+    const res = await app.request("/groq/debug");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.registeredModels).toBeDefined();
+    expect(json.data.registeredModels.text).toBeGreaterThan(0);
+    expect(json.data.registeredModels.stt).toBeGreaterThan(0);
+    expect(json.data.registeredModels.tts).toBeGreaterThan(0);
+  });
+});
+
+describe("GET /groq/health", () => {
+  it("returns error status when no API key is configured", async () => {
+    setupNoApiKey();
+    const app = buildApp();
+    const res = await app.request("/groq/health");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(false);
+    expect(json.data.status).toBe("error");
+    expect(json.data.checks.apiKey.status).toBe("error");
+  });
+
+  it("returns error status for invalid key format", async () => {
+    setupWithApiKey("sk-wrong-prefix");
+    const app = buildApp();
+    const res = await app.request("/groq/health");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.status).toBe("error");
+    expect(json.data.checks.apiKey.status).toBe("error");
+    expect(json.data.checks.apiKey.message).toContain("gsk_");
+  });
+
+  it("returns ok status when API key is valid and connectivity succeeds", async () => {
+    setupWithApiKey("gsk_validkey1234567890abc");
+    mockFetch(200);
+    const app = buildApp();
+    const res = await app.request("/groq/health");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.data.status).toBe("ok");
+    expect(json.data.checks.apiKey.status).toBe("ok");
+    expect(json.data.checks.connectivity.status).toBe("ok");
+    expect(json.data.checks.modelRegistry.status).toBe("ok");
+  });
+
+  it("returns error status when connectivity fails", async () => {
+    setupWithApiKey("gsk_validkey1234567890abc");
+    mockFetch(401, '{"error":"Invalid API Key"}');
+    const app = buildApp();
+    const res = await app.request("/groq/health");
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.status).toBe("error");
+    expect(json.data.checks.apiKey.status).toBe("ok");
+    expect(json.data.checks.connectivity.status).toBe("error");
+  });
 });
 
 describe("POST /groq/test", () => {

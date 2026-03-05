@@ -112,6 +112,7 @@ export function createGroqRoutes(deps: WebUIServerDeps) {
   // Does not expose the API key value.
   app.get("/debug", (c) => {
     const apiKey = getGroqApiKey(deps);
+    const keyValid = apiKey.startsWith("gsk_") && apiKey.length >= 20;
     return c.json({
       success: true,
       data: {
@@ -121,6 +122,79 @@ export function createGroqRoutes(deps: WebUIServerDeps) {
           : "Authorization: Bearer <not set>",
         apiKeyConfigured: !!apiKey,
         apiKeyPrefix: apiKey ? apiKey.slice(0, 4) : null,
+        apiKeyLength: apiKey ? apiKey.length : 0,
+        apiKeyFormatValid: keyValid,
+        registeredModels: {
+          text: GROQ_MODEL_REGISTRY.filter((m) => m.type === "text").length,
+          stt: GROQ_MODEL_REGISTRY.filter((m) => m.type === "stt").length,
+          tts: GROQ_MODEL_REGISTRY.filter((m) => m.type === "tts").length,
+        },
+        troubleshooting: !apiKey
+          ? "No API key configured. Set agent.api_key in config."
+          : !keyValid
+            ? "API key format invalid. Groq keys should start with 'gsk_' and be at least 20 characters."
+            : null,
+      },
+    } as APIResponse);
+  });
+
+  // GET /api/groq/health — comprehensive health check with live API validation
+  app.get("/health", async (c) => {
+    const apiKey = getGroqApiKey(deps);
+    const checks: Record<string, { status: "ok" | "warn" | "error"; message: string }> = {};
+
+    // Check 1: API key configuration
+    if (!apiKey) {
+      checks.apiKey = { status: "error", message: "No API key configured" };
+    } else if (!apiKey.startsWith("gsk_")) {
+      checks.apiKey = { status: "error", message: "API key must start with 'gsk_'" };
+    } else if (apiKey.length < 20) {
+      checks.apiKey = { status: "error", message: "API key appears too short" };
+    } else {
+      checks.apiKey = { status: "ok", message: "API key format valid" };
+    }
+
+    // Check 2: Live API connectivity (only if key is configured)
+    if (apiKey && checks.apiKey.status === "ok") {
+      const result = await testGroqApiKey(apiKey);
+      if (result.valid) {
+        checks.connectivity = { status: "ok", message: "Successfully connected to Groq API" };
+      } else {
+        checks.connectivity = {
+          status: "error",
+          message: result.hint || result.error || "Connection failed",
+        };
+      }
+    } else {
+      checks.connectivity = { status: "warn", message: "Skipped - fix API key first" };
+    }
+
+    // Check 3: Model registry
+    const textModels = GROQ_MODEL_REGISTRY.filter((m) => m.type === "text").length;
+    const sttModels = GROQ_MODEL_REGISTRY.filter((m) => m.type === "stt").length;
+    const ttsModels = GROQ_MODEL_REGISTRY.filter((m) => m.type === "tts").length;
+    if (textModels > 0 && sttModels > 0 && ttsModels > 0) {
+      checks.modelRegistry = {
+        status: "ok",
+        message: `${textModels} text, ${sttModels} STT, ${ttsModels} TTS models registered`,
+      };
+    } else {
+      checks.modelRegistry = { status: "warn", message: "Model registry incomplete" };
+    }
+
+    const overallStatus = Object.values(checks).some((c) => c.status === "error")
+      ? "error"
+      : Object.values(checks).some((c) => c.status === "warn")
+        ? "warn"
+        : "ok";
+
+    return c.json({
+      success: overallStatus !== "error",
+      data: {
+        status: overallStatus,
+        checks,
+        baseURL: GROQ_API_BASE,
+        timestamp: new Date().toISOString(),
       },
     } as APIResponse);
   });

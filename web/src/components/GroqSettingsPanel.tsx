@@ -17,6 +17,11 @@ interface ModelOption {
   description: string;
 }
 
+interface HealthCheck {
+  status: 'ok' | 'warn' | 'error';
+  checks: Record<string, { status: 'ok' | 'warn' | 'error'; message: string }>;
+}
+
 const DEFAULT_STT_MODELS: ModelOption[] = [
   { value: 'whisper-large-v3', name: 'Whisper Large v3', description: 'Best accuracy, multilingual' },
   { value: 'whisper-large-v3-turbo', name: 'Whisper Large v3 Turbo', description: 'Fast + accurate' },
@@ -39,6 +44,8 @@ export function GroqSettingsPanel({ getLocal, saveConfig, isGroqProvider }: Groq
   const [voices, setVoices] = useState<string[]>(DEFAULT_VOICES);
   const [testingKey, setTestingKey] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [healthCheck, setHealthCheck] = useState<HealthCheck | null>(null);
+  const [checkingHealth, setCheckingHealth] = useState(false);
 
   useEffect(() => {
     if (!isGroqProvider) return;
@@ -69,6 +76,21 @@ export function GroqSettingsPanel({ getLocal, saveConfig, isGroqProvider }: Groq
     }
   };
 
+  const handleHealthCheck = async () => {
+    setCheckingHealth(true);
+    setHealthCheck(null);
+    try {
+      const res = await api.getGroqHealth();
+      if (res.data) {
+        setHealthCheck(res.data);
+      }
+    } catch {
+      setHealthCheck({ status: 'error', checks: { network: { status: 'error', message: 'Failed to connect to server' } } });
+    } finally {
+      setCheckingHealth(false);
+    }
+  };
+
   if (!isGroqProvider) return null;
 
   const sttModel = getLocal('groq.stt_model') || 'whisper-large-v3-turbo';
@@ -89,7 +111,7 @@ export function GroqSettingsPanel({ getLocal, saveConfig, isGroqProvider }: Groq
         {/* API Key Test */}
         <div className="form-group" style={{ marginBottom: 0 }}>
           <label>API Key Test <InfoTip text="Test connectivity to the Groq API with your current key" /></label>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
               className="btn-sm"
               onClick={handleTestKey}
@@ -98,12 +120,32 @@ export function GroqSettingsPanel({ getLocal, saveConfig, isGroqProvider }: Groq
             >
               {testingKey ? <><span className="spinner sm" /> Testing...</> : 'Test Key'}
             </button>
+            <button
+              className="btn-sm"
+              onClick={handleHealthCheck}
+              disabled={checkingHealth}
+              style={{ flexShrink: 0 }}
+            >
+              {checkingHealth ? <><span className="spinner sm" /> Checking...</> : 'Health Check'}
+            </button>
             {testResult && (
               <span style={{ fontSize: '13px', color: testResult.ok ? 'var(--green)' : 'var(--red)' }}>
                 {testResult.ok ? '✓' : '✗'} {testResult.msg}
               </span>
             )}
           </div>
+          {healthCheck && (
+            <div style={{ marginTop: '8px', padding: '8px', borderRadius: '4px', background: 'var(--bg-secondary)', fontSize: '12px' }}>
+              <div style={{ fontWeight: 600, marginBottom: '4px', color: healthCheck.status === 'ok' ? 'var(--green)' : healthCheck.status === 'warn' ? 'var(--yellow)' : 'var(--red)' }}>
+                Status: {healthCheck.status.toUpperCase()}
+              </div>
+              {Object.entries(healthCheck.checks).map(([name, check]) => (
+                <div key={name} style={{ marginLeft: '8px', color: check.status === 'ok' ? 'var(--green)' : check.status === 'warn' ? 'var(--yellow)' : 'var(--red)' }}>
+                  {check.status === 'ok' ? '✓' : check.status === 'warn' ? '⚠' : '✗'} {name}: {check.message}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* STT Model */}

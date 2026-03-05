@@ -666,6 +666,28 @@ export const api = {
     });
   },
 
+  async getGroqDebug() {
+    return fetchAPI<APIResponse<{
+      baseURL: string;
+      authHeaderShape: string;
+      apiKeyConfigured: boolean;
+      apiKeyPrefix: string | null;
+      apiKeyLength: number;
+      apiKeyFormatValid: boolean;
+      registeredModels: { text: number; stt: number; tts: number };
+      troubleshooting: string | null;
+    }>>('/groq/debug');
+  },
+
+  async getGroqHealth() {
+    return fetchAPI<APIResponse<{
+      status: 'ok' | 'warn' | 'error';
+      checks: Record<string, { status: 'ok' | 'warn' | 'error'; message: string }>;
+      baseURL: string;
+      timestamp: string;
+    }>>('/groq/health');
+  },
+
   connectLogs(onLog: (entry: LogEntry) => void, onError?: (error: Event) => void) {
     const url = `${API_BASE}/logs/stream`;
     const eventSource = new EventSource(url);
