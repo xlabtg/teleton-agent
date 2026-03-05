@@ -5,6 +5,7 @@ import { useConfigState } from '../hooks/useConfigState';
 import { PillBar } from '../components/PillBar';
 import { AgentSettingsPanel } from '../components/AgentSettingsPanel';
 import { TelegramSettingsPanel } from '../components/TelegramSettingsPanel';
+import { GroqSettingsPanel } from '../components/GroqSettingsPanel';
 import { Select } from '../components/Select';
 import { ArrayInput } from '../components/ArrayInput';
 import { EditableField } from '../components/EditableField';
@@ -132,6 +133,13 @@ export function Config() {
               />
             </div>
           )}
+
+          <GroqSettingsPanel
+            getLocal={config.getLocal}
+            getServer={config.getServer}
+            saveConfig={config.saveConfig}
+            isGroqProvider={config.getLocal('agent.provider') === 'groq'}
+          />
 
         </>
       )}

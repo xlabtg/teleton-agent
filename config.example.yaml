@@ -49,6 +49,16 @@ telegram:
 # Optional: Tavily API key for web search/fetch tools
 # tavily_api_key: "YOUR_TAVILY_KEY"  # From https://tavily.com
 
+# Groq multi-modal configuration (only applies when agent.provider = "groq")
+# Enables native STT (Whisper) and TTS (PlayAI) via Groq's API.
+# groq:
+#   stt_model: "whisper-large-v3-turbo"    # STT model: whisper-large-v3 | whisper-large-v3-turbo | distil-whisper-large-v3-en
+#   tts_model: "playai-tts"                # TTS model: playai-tts | playai-tts-arabic
+#   tts_voice: "Fritz-PlayAI"              # Voice name (23 voices available)
+#   tts_format: "mp3"                      # Output format: mp3 | opus | aac | flac | wav | pcm
+#   stt_language: ""                       # Language hint for STT (e.g. "en"). Empty = auto-detect.
+#   rate_limit_mode: "auto"               # Rate limit handling: auto | strict | off
+
 # Embedding provider for RAG vector search
 embedding:
   provider: "local"                  # local | anthropic | none

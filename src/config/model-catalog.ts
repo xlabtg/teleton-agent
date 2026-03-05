@@ -10,6 +10,69 @@ export interface ModelOption {
   description: string;
 }
 
+/** Extended model option with modal type classification (for multi-modal providers) */
+export interface GroqModelOption extends ModelOption {
+  type: "text" | "stt" | "tts";
+}
+
+/** Groq text models for LLM chat completions */
+export const GROQ_TEXT_MODELS: ModelOption[] = [
+  {
+    value: "meta-llama/llama-4-maverick-17b-128e-instruct",
+    name: "Llama 4 Maverick",
+    description: "Vision, 131K ctx, $0.20/M",
+  },
+  { value: "qwen/qwen3-32b", name: "Qwen3 32B", description: "Reasoning, 131K ctx, $0.29/M" },
+  {
+    value: "deepseek-r1-distill-llama-70b",
+    name: "DeepSeek R1 70B",
+    description: "Reasoning, 131K ctx, $0.75/M",
+  },
+  {
+    value: "llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B",
+    description: "General purpose, 131K ctx, $0.59/M",
+  },
+  {
+    value: "llama-3.1-8b-instant",
+    name: "Llama 3.1 8B",
+    description: "Fast & cheap, 131K ctx, $0.05/M",
+  },
+];
+
+/** Groq STT (Speech-to-Text) models — Whisper variants */
+export const GROQ_STT_MODELS: ModelOption[] = [
+  {
+    value: "whisper-large-v3",
+    name: "Whisper Large v3",
+    description: "Best accuracy, multilingual, $0.111/hr",
+  },
+  {
+    value: "whisper-large-v3-turbo",
+    name: "Whisper Large v3 Turbo",
+    description: "Fast + accurate, multilingual, $0.04/hr",
+  },
+  {
+    value: "distil-whisper-large-v3-en",
+    name: "Distil Whisper v3 (EN)",
+    description: "English-only, fastest, $0.02/hr",
+  },
+];
+
+/** Groq TTS (Text-to-Speech) models — PlayAI variants */
+export const GROQ_TTS_MODELS: ModelOption[] = [
+  {
+    value: "playai-tts",
+    name: "PlayAI TTS",
+    description: "English TTS, 23 voices, $0.059/hr",
+  },
+  {
+    value: "playai-tts-arabic",
+    name: "PlayAI TTS Arabic",
+    description: "Arabic TTS, dedicated voices, $0.059/hr",
+  },
+];
+
 export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
   anthropic: [
     {
@@ -64,24 +127,7 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
     { value: "grok-code-fast-1", name: "Grok Code", description: "Coding specialist, fast" },
     { value: "grok-3", name: "Grok 3", description: "Stable, 131K ctx, $3/M" },
   ],
-  groq: [
-    {
-      value: "meta-llama/llama-4-maverick-17b-128e-instruct",
-      name: "Llama 4 Maverick",
-      description: "Vision, 131K ctx, $0.20/M",
-    },
-    { value: "qwen/qwen3-32b", name: "Qwen3 32B", description: "Reasoning, 131K ctx, $0.29/M" },
-    {
-      value: "deepseek-r1-distill-llama-70b",
-      name: "DeepSeek R1 70B",
-      description: "Reasoning, 131K ctx, $0.75/M",
-    },
-    {
-      value: "llama-3.3-70b-versatile",
-      name: "Llama 3.3 70B",
-      description: "General purpose, 131K ctx, $0.59/M",
-    },
-  ],
+  groq: GROQ_TEXT_MODELS,
   openrouter: [
     { value: "anthropic/claude-opus-4.5", name: "Claude Opus 4.5", description: "200K ctx, $5/M" },
     {
@@ -230,4 +276,14 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
 export function getModelsForProvider(provider: string): ModelOption[] {
   const key = provider === "claude-code" ? "anthropic" : provider;
   return MODEL_OPTIONS[key] || [];
+}
+
+/** Get Groq STT models */
+export function getGroqSttModels(): ModelOption[] {
+  return GROQ_STT_MODELS;
+}
+
+/** Get Groq TTS models */
+export function getGroqTtsModels(): ModelOption[] {
+  return GROQ_TTS_MODELS;
 }

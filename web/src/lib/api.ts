@@ -640,6 +640,32 @@ export const api = {
     });
   },
 
+  // ── Groq Multi-Modal ──────────────────────────────────────────────
+
+  async getGroqModels(type?: 'text' | 'stt' | 'tts') {
+    const qs = type ? `?type=${type}` : '';
+    return fetchAPI<APIResponse<Array<{ id: string; type: string; displayName: string; rpm: number; tpm: number; tpd: number }>>>(`/groq/models${qs}`);
+  },
+
+  async getGroqSttModels() {
+    return fetchAPI<APIResponse<Array<{ value: string; name: string; description: string }>>>('/groq/models/stt');
+  },
+
+  async getGroqTtsModels() {
+    return fetchAPI<APIResponse<Array<{ value: string; name: string; description: string }>>>('/groq/models/tts');
+  },
+
+  async getGroqTtsVoices() {
+    return fetchAPI<APIResponse<string[]>>('/groq/tts/voices');
+  },
+
+  async testGroqKey(apiKey?: string) {
+    return fetchAPI<APIResponse<{ valid: boolean }>>('/groq/test', {
+      method: 'POST',
+      body: JSON.stringify(apiKey ? { apiKey } : {}),
+    });
+  },
+
   connectLogs(onLog: (entry: LogEntry) => void, onError?: (error: Event) => void) {
     const url = `${API_BASE}/logs/stream`;
     const eventSource = new EventSource(url);

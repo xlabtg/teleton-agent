@@ -294,6 +294,37 @@ export const ConfigSchema = z.object({
     .string()
     .optional()
     .describe("Tavily API key for web search & extract (free at https://tavily.com)"),
+  groq: z
+    .object({
+      stt_model: z
+        .string()
+        .default("whisper-large-v3-turbo")
+        .describe("Groq STT model (e.g. whisper-large-v3, whisper-large-v3-turbo)"),
+      tts_model: z
+        .string()
+        .default("playai-tts")
+        .describe("Groq TTS model (e.g. playai-tts, playai-tts-arabic)"),
+      tts_voice: z
+        .string()
+        .default("Fritz-PlayAI")
+        .describe("Groq TTS voice name (e.g. Fritz-PlayAI, Celeste-PlayAI)"),
+      tts_format: z
+        .enum(["mp3", "opus", "aac", "flac", "wav", "pcm"])
+        .default("mp3")
+        .describe("TTS output audio format"),
+      stt_language: z
+        .string()
+        .optional()
+        .describe("STT language hint (e.g. 'en'). Auto-detected if omitted."),
+      rate_limit_mode: z
+        .enum(["auto", "strict", "off"])
+        .default("auto")
+        .describe(
+          "Rate limit handling: auto (retry 429s), strict (queue to avoid 429s), off (no retry)"
+        ),
+    })
+    .optional()
+    .describe("Groq multi-modal configuration (STT, TTS, rate limits)"),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -311,3 +342,4 @@ export type ToolRagConfig = z.infer<typeof ToolRagConfigSchema>;
 export type McpServerConfig = z.infer<typeof McpServerSchema>;
 export type CapabilitiesConfig = z.infer<typeof CapabilitiesConfigSchema>;
 export type ExecConfig = z.infer<typeof _ExecObject>;
+export type GroqConfig = NonNullable<z.infer<typeof ConfigSchema>["groq"]>;
