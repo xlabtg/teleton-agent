@@ -1,86 +1,71 @@
 ```
 # Dependencies
 node_modules/
-.webpack/
-.next/
-nuxt/
-.un~lock
-.yarn-integrity
-.yarn/
-.pnp.*
-.pnp.js
-.npm/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Build outputs
+# Build artifacts
 dist/
 build/
-coverage/
-.eslintcache
-.output/
-.output.js
-.output.json
+target/
+
+# Logs and temporary files
+*.log
+*.tmp
 
 # Environment variables
 .env
 .env.local
-.env.*
-!.env.example
+*.env.*
 
-# IDE files
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*~
 
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Python
+# Python specific
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
+env/
+venv/
+.venv/
 pip-log.txt
 pip-delete-this-directory.txt
-.tox/
+
+# Coverage reports
+coverage/
+htmlcov/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git/
 
-# Temporary files
-*.tmp
-*.temp
-.tmp
-.temp
+# MyPy cache
+.mypy_cache/
 
-# Compiled files
+# Pytest cache
+.pytest_cache/
+
+# Gradle
+.gradle/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.hprof
+
+# C/C++
 *.o
 *.obj
-*.exe
-*.dll
-*.so
 *.a
+*.lib
+*.so
+*.dll
+*.dylib
+*.exe
 *.out
-*.class
 
-# Compressed files
+# Compression
 *.zip
 *.gz
 *.tar
@@ -99,32 +84,15 @@ coverage.xml
 *.Z
 *.lz
 *.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 
-# Testing
-.mypy_cache/
-.pytest_cache/
-coverage/
-htmlcov/
-.coverage
-
-# Gradle
-.gradle/
-build/
-
-# Julia
-.julia/
-julia-*/
-
-# Zig
-zig-cache/
-zig-out/
-
-# Go
-*.a
-*.o
-*.so
-*.swp
-._*
+# OS generated files
 .DS_Store
-pkg/
+Thumbs.db
+ehthumbs.db
+Icon?
+apidoc/
 ```
