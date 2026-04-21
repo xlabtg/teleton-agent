@@ -51,6 +51,7 @@ import type { WebUIServer } from "./webui/server.js";
 import type { ApiServer } from "./api/server.js";
 import { initMetrics } from "./services/metrics.js";
 import { initAnalytics } from "./services/analytics.js";
+import { initAutonomousPlanning } from "./services/autonomous-planning.js";
 import { flushOffsets } from "./telegram/offset-store.js";
 
 const log = createLogger("App");
@@ -142,6 +143,7 @@ export class TeletonApp {
     // Initialize analytics and metrics singletons early so agent runtime can record data
     initMetrics(db);
     initAnalytics(db);
+    initAutonomousPlanning(this.config);
 
     this.userHookEvaluator = new UserHookEvaluator(db);
     this.agent.setUserHookEvaluator(this.userHookEvaluator);
@@ -754,6 +756,14 @@ ${blue}  ┌──────────────────────�
           `Heartbeat enabled: every ${Math.round(hbInterval / 60000)}min → admin ${adminChatId}`
         );
       }
+    }
+
+    // Schedule autonomous daily planning and reflection cycle
+    const { getAutonomousPlanning } = await import("./services/autonomous-planning.js");
+    const planningSystem = getAutonomousPlanning();
+    if (planningSystem) {
+      planningSystem.scheduleDailyCycle();
+      log.info("📅 Autonomous daily planning & reflection cycle scheduled");
     }
 
     // Initialize message debouncer with bypass logic

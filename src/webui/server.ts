@@ -50,6 +50,7 @@ import { createHealthRoutes } from "./routes/health.js";
 import { createExportImportRoutes } from "./routes/export-import.js";
 import { createWorkflowsRoutes } from "./routes/workflows.js";
 import { createSelfImprovementRoutes } from "./routes/self-improvement.js";
+import { registerAutonomousRoutes } from "./routes/autonomous.js";
 
 function findWebDist(): string | null {
   // Try common locations relative to CWD (where teleton is launched from)
@@ -249,6 +250,7 @@ export class WebUIServer {
     this.app.route("/api/export", createExportImportRoutes(this.deps));
     this.app.route("/api/workflows", createWorkflowsRoutes(this.deps));
     this.app.route("/api/self-improvement", createSelfImprovementRoutes(this.deps));
+    registerAutonomousRoutes(this.app);
 
     // Debug endpoint — returns build metadata (which dist folder is served and its version)
     this.app.get("/api/debug/ui-version", (c) => {

@@ -20,6 +20,7 @@ import { Sessions } from "./pages/Sessions";
 import { Analytics } from "./pages/Analytics";
 import { Security } from "./pages/Security";
 import { SelfImprove } from "./pages/SelfImprove";
+import { Autonomous } from "./pages/Autonomous";
 import { Setup } from "./pages/Setup";
 import { SetupLayout } from "./components/setup/SetupLayout";
 import { checkAuth, login } from "./lib/api";
@@ -153,6 +154,7 @@ function AuthenticatedApp() {
               <Route path="analytics" element={<Analytics />} />
               <Route path="security" element={<Security />} />
               <Route path="self-improve" element={<SelfImprove />} />
+              <Route path="autonomous" element={<Autonomous />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
