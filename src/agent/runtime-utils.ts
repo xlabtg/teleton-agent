@@ -97,6 +97,44 @@ export function isNetworkErrorMessage(message: string): boolean {
   );
 }
 
+export interface ModelUnavailableDiagnosticInput {
+  provider: string;
+  model: string;
+  errorMessage: string;
+  defaultModel?: string;
+}
+
+export function isModelUnavailableError(errorMessage: string): boolean {
+  const lower = errorMessage.toLowerCase();
+  return (
+    /\b410\b/.test(lower) ||
+    lower.includes("gone") ||
+    lower.includes("model not found") ||
+    lower.includes("model_not_found") ||
+    lower.includes("model unavailable") ||
+    lower.includes("model_unavailable") ||
+    lower.includes("not available or recognized") ||
+    lower.includes("does not exist") ||
+    (lower.includes("selected model") && lower.includes("not available"))
+  );
+}
+
+export function getModelUnavailableDiagnostic(
+  input: ModelUnavailableDiagnosticInput
+): string | null {
+  if (!isModelUnavailableError(input.errorMessage)) return null;
+
+  const base =
+    `Provider ${input.provider} rejected model "${input.model}" with ${input.errorMessage}. ` +
+    "This usually means the configured model ID or provider endpoint is no longer available.";
+
+  if (input.defaultModel && input.defaultModel !== input.model) {
+    return `${base} Update agent.model to "${input.defaultModel}" or run teleton setup again.`;
+  }
+
+  return `${base} Choose a currently supported model for this provider and update agent.model.`;
+}
+
 export interface EmptyResponseDiagnosticInput {
   provider: string;
   model: string;

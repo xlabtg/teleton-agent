@@ -6,6 +6,8 @@ import {
   sleepWithAbort,
   isNetworkError,
   isNetworkErrorMessage,
+  isModelUnavailableError,
+  getModelUnavailableDiagnostic,
   getEmptyResponseDiagnostic,
   getEmptyResponseRecoveryPrompt,
   trimRagContext,
@@ -376,6 +378,35 @@ describe("isNetworkErrorMessage", () => {
   it("T14m: detects 'Request timed out' (ZAI provider stopReason:error path)", () => {
     expect(isNetworkErrorMessage("Request timed out.")).toBe(true);
     expect(isNetworkErrorMessage("request timed out")).toBe(true);
+  });
+});
+
+describe("model unavailable diagnostics", () => {
+  it("detects Anthropic 410 responses as unavailable model errors", () => {
+    expect(isModelUnavailableError("410 status code (no body)")).toBe(true);
+  });
+
+  it("returns update guidance when the default model differs from the configured model", () => {
+    const result = getModelUnavailableDiagnostic({
+      provider: "anthropic",
+      model: "claude-opus-4-6",
+      defaultModel: "claude-opus-4-8",
+      errorMessage: "410 status code (no body)",
+    });
+
+    expect(result).toContain('Provider anthropic rejected model "claude-opus-4-6"');
+    expect(result).toContain('Update agent.model to "claude-opus-4-8"');
+  });
+
+  it("does not produce guidance for unrelated API errors", () => {
+    expect(
+      getModelUnavailableDiagnostic({
+        provider: "anthropic",
+        model: "claude-opus-4-8",
+        defaultModel: "claude-opus-4-8",
+        errorMessage: "500 internal server error",
+      })
+    ).toBeNull();
   });
 });
 

@@ -5,8 +5,8 @@
 agent:
   provider: "anthropic"              # anthropic | openai | google | xai | groq | openrouter | nvidia
   api_key: "YOUR_API_KEY"
-  model: "claude-haiku-4-5-20251001" # Model ID (varies by provider)
-  # utility_model: "claude-3-5-haiku-20241022"  # Optional: cheap model for summarization
+  model: "claude-opus-4-8" # Model ID (varies by provider)
+  # utility_model: "claude-haiku-4-5-20251001"  # Optional: cheap model for summarization
   max_tokens: 4096
   temperature: 0.7
   # system_prompt: null              # Custom system prompt override (null = use SOUL.md)

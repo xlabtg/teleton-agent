@@ -88,4 +88,23 @@ describe("chatWithContext abort signal handling", () => {
     expect(completeSignal?.aborted).toBe(true);
     expect(completeSignal?.reason).toBe(reason);
   });
+
+  it("omits temperature for Claude Opus 4.8 requests", async () => {
+    const { chatWithContext } = await import("../client.js");
+
+    await chatWithContext(
+      {
+        ...agentConfig(),
+        provider: "anthropic",
+        api_key: "sk-ant-test-key",
+        model: "claude-opus-4-8",
+        temperature: 0.7,
+      },
+      {
+        context: { messages: [], systemPrompt: "test" },
+      }
+    );
+
+    expect(getCapturedCompleteOptions()).not.toHaveProperty("temperature");
+  });
 });

@@ -55,7 +55,7 @@ vi.mock("../../config/providers.js", () => ({
     {
       id: "anthropic",
       displayName: "Anthropic (Claude)",
-      defaultModel: "claude-haiku-4-5-20251001",
+      defaultModel: "claude-opus-4-8",
       utilityModel: "claude-haiku-4-5-20251001",
       toolLimit: null,
       keyPrefix: "sk-ant-",
@@ -74,7 +74,7 @@ vi.mock("../../config/providers.js", () => ({
   getProviderMetadata: vi.fn(() => ({
     id: "anthropic",
     displayName: "Anthropic (Claude)",
-    defaultModel: "claude-haiku-4-5-20251001",
+    defaultModel: "claude-opus-4-8",
   })),
   validateApiKeyFormat: vi.fn(),
 }));
@@ -179,7 +179,7 @@ describe("Setup API Routes", () => {
       {
         id: "anthropic",
         displayName: "Anthropic (Claude)",
-        defaultModel: "claude-haiku-4-5-20251001",
+        defaultModel: "claude-opus-4-8",
         utilityModel: "claude-haiku-4-5-20251001",
         toolLimit: null,
         keyPrefix: "sk-ant-",
@@ -198,7 +198,7 @@ describe("Setup API Routes", () => {
     (getProviderMetadata as Mock).mockReturnValue({
       id: "anthropic",
       displayName: "Anthropic (Claude)",
-      defaultModel: "claude-haiku-4-5-20251001",
+      defaultModel: "claude-opus-4-8",
     });
     (validateApiKeyFormat as Mock).mockReturnValue(undefined);
     (ConfigSchema.parse as Mock).mockImplementation((v: unknown) => v);
@@ -1035,7 +1035,7 @@ mtproto:
 
       const writeCall = (writeFileSync as Mock).mock.calls[0];
       // The model should fall back to providerMeta.defaultModel
-      expect(writeCall[1]).toContain("claude-haiku-4-5-20251001");
+      expect(writeCall[1]).toContain("claude-opus-4-8");
     });
 
     it("writes config with restricted permissions (0o600)", async () => {

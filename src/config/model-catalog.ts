@@ -97,14 +97,19 @@ export const GROQ_TTS_MODELS: ModelOption[] = [
 export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
   anthropic: [
     {
+      value: "claude-opus-4-8",
+      name: "Claude Opus 4.8",
+      description: "Current default, 1M ctx, $5/$25",
+    },
+    {
       value: "claude-opus-4-7",
       name: "Claude Opus 4.7",
-      description: "Most capable available, 1M ctx, reasoning, $5/$25",
+      description: "Previous gen, 1M ctx, reasoning, $5/$25",
     },
     {
       value: "claude-opus-4-6",
       name: "Claude Opus 4.6",
-      description: "Previous gen, 1M ctx, reasoning, $5/$25",
+      description: "Legacy, may be retired, 1M ctx, $5/$25",
     },
     {
       value: "claude-opus-4-5-20251101",
@@ -119,7 +124,7 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
     {
       value: "claude-haiku-4-5-20251001",
       name: "Claude Haiku 4.5",
-      description: "Fast & cheap, 200K ctx, $1/$5 (default)",
+      description: "Fast & cheap, 200K ctx, $1/$5",
     },
   ],
   openai: [

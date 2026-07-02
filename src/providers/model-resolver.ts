@@ -7,6 +7,29 @@ const log = createLogger("LLM");
 
 const modelCache = new Map<string, Model<Api>>();
 
+// Bridge current Anthropic IDs until pi-ai's generated registry includes them.
+// Keep reasoning disabled here because pi-ai 0.73.1 does not know Opus 4.8's
+// adaptive-thinking rules and would otherwise choose the older budgeted path.
+const ANTHROPIC_MODEL_OVERRIDES: Record<string, Model<"anthropic-messages">> = {
+  "claude-opus-4-8": {
+    id: "claude-opus-4-8",
+    name: "Claude Opus 4.8",
+    api: "anthropic-messages",
+    provider: "anthropic",
+    baseUrl: "https://api.anthropic.com",
+    reasoning: false,
+    input: ["text", "image"],
+    cost: {
+      input: 5,
+      output: 25,
+      cacheRead: 0.5,
+      cacheWrite: 6.25,
+    },
+    contextWindow: 1_000_000,
+    maxTokens: 128_000,
+  },
+};
+
 const GOCOON_MODELS: Record<string, Model<"openai-completions">> = {};
 
 /** Register models discovered from a running gocoon-runner (native OpenAI-compatible API). */
@@ -181,6 +204,12 @@ export function getProviderModel(provider: SupportedProvider, modelId: string): 
     return model;
   }
 
+  if (meta.piAiProvider === "anthropic" && ANTHROPIC_MODEL_OVERRIDES[modelId]) {
+    const model = ANTHROPIC_MODEL_OVERRIDES[modelId];
+    modelCache.set(cacheKey, model);
+    return model;
+  }
+
   // Moonshot backward-compat: remap old model IDs to kimi-coding IDs
   if (provider === "moonshot" && MOONSHOT_MODEL_ALIASES[modelId]) {
     modelId = MOONSHOT_MODEL_ALIASES[modelId];
@@ -199,6 +228,12 @@ export function getProviderModel(provider: SupportedProvider, modelId: string): 
     const fallbackKey = `${provider}:${meta.defaultModel}`;
     const fallbackCached = modelCache.get(fallbackKey);
     if (fallbackCached) return fallbackCached;
+
+    if (meta.piAiProvider === "anthropic" && ANTHROPIC_MODEL_OVERRIDES[meta.defaultModel]) {
+      const model = ANTHROPIC_MODEL_OVERRIDES[meta.defaultModel];
+      modelCache.set(fallbackKey, model);
+      return model;
+    }
 
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- same as above: dynamic strings

@@ -58,6 +58,12 @@ function normalizeProviderTemperature(provider: SupportedProvider, temperature: 
   return Math.min(Math.max(temperature, 0), NVIDIA_MAX_TEMPERATURE);
 }
 
+function shouldOmitProviderTemperature(provider: SupportedProvider, modelId: string): boolean {
+  if (provider !== "anthropic" && provider !== "claude-code") return false;
+
+  return /^claude-opus-4-(?:7|8)(?:$|-)/.test(modelId.toLowerCase());
+}
+
 export interface ChatOptions {
   systemPrompt?: string;
   context: Context;
@@ -134,13 +140,15 @@ export async function chatWithContext(
   const completeOptions: Record<string, unknown> = {
     apiKey: getEffectiveApiKey(provider, config.api_key),
     maxTokens: options.maxTokens ?? config.max_tokens,
-    temperature,
     sessionId: options.sessionId,
     cacheRetention: provider === "nvidia" ? NVIDIA_CACHE_RETENTION : DEFAULT_CACHE_RETENTION,
     signal: options.signal
       ? AbortSignal.any([options.signal, requestTimeoutSignal])
       : requestTimeoutSignal,
   };
+  if (!shouldOmitProviderTemperature(provider, config.model)) {
+    completeOptions.temperature = temperature;
+  }
 
   let response = await complete(model, context, completeOptions as ProviderStreamOptions);
 
@@ -191,10 +199,12 @@ export function streamWithContext(config: AgentConfig, options: ChatOptions): St
   const streamOptions: Record<string, unknown> = {
     apiKey: getEffectiveApiKey(provider, config.api_key),
     maxTokens: options.maxTokens ?? config.max_tokens,
-    temperature,
     sessionId: options.sessionId,
     cacheRetention: provider === "nvidia" ? NVIDIA_CACHE_RETENTION : DEFAULT_CACHE_RETENTION,
   };
+  if (!shouldOmitProviderTemperature(provider, config.model)) {
+    streamOptions.temperature = temperature;
+  }
 
   const eventStream = stream(model, context, streamOptions as ProviderStreamOptions);
 

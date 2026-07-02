@@ -223,6 +223,26 @@ describe("AgentRuntime retry backoff", () => {
     expect(chatWithContextMock).toHaveBeenCalledTimes(2);
   });
 
+  it("reports Anthropic 410 responses as an unavailable model with recovery guidance", async () => {
+    const runtime = await createRuntime();
+    chatWithContextMock.mockResolvedValueOnce(errorResponse("410 status code (no body)"));
+
+    await expect(
+      runtime.processMessage({
+        chatId: "1001",
+        userMessage: "hello",
+        userName: "Owner",
+        toolContext: {
+          senderId: 1001,
+          config: makeConfig(),
+        },
+      })
+    ).rejects.toThrow(
+      'Provider anthropic rejected model "claude-opus-4-6" with 410 status code (no body)'
+    );
+    expect(chatWithContextMock).toHaveBeenCalledTimes(1);
+  });
+
   it("stops a pending rate-limit backoff when the signal is aborted", async () => {
     vi.useFakeTimers();
     const runtime = await createRuntime();

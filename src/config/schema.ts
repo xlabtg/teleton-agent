@@ -72,7 +72,7 @@ export const AgentConfigSchema = z.object({
     .url()
     .optional()
     .describe("Base URL for local LLM server (e.g. http://localhost:11434/v1)"),
-  model: z.string().default("claude-opus-4-6"),
+  model: z.string().default("claude-opus-4-8"),
   utility_model: z
     .string()
     .optional()

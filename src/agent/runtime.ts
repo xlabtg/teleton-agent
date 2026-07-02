@@ -87,6 +87,7 @@ import {
   isNetworkErrorMessage,
   getEmptyResponseDiagnostic,
   getEmptyResponseRecoveryPrompt,
+  getModelUnavailableDiagnostic,
   trimRagContext,
   LoopStallDetector,
   sleepWithAbort,
@@ -1098,6 +1099,17 @@ export class AgentRuntime {
               `Network error after ${NETWORK_ERROR_MAX_RETRIES} retries. Please check your connection and try again.`
             );
           } else {
+            const modelDiagnostic = getModelUnavailableDiagnostic({
+              provider,
+              model: this.config.agent.model,
+              errorMessage: errorMsg,
+              defaultModel: providerMeta.defaultModel,
+            });
+            if (modelDiagnostic) {
+              log.error(`🚨 ${modelDiagnostic}`);
+              throw new Error(modelDiagnostic);
+            }
+
             log.error(`🚨 API error: ${errorMsg}`);
             throw new Error(`API error: ${errorMsg || "Unknown error"}`);
           }
