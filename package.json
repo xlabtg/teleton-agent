@@ -1,6 +1,6 @@
 {
   "name": "teleton",
-  "version": "0.8.54",
+  "version": "0.8.55",
   "workspaces": [
     "packages/*"
   ],

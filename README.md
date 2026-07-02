@@ -42,7 +42,7 @@
 
 ## Current Fork Status
 
-Current fork version: `0.8.54`. <!-- x-release-please-version -->
+Current fork version: `0.8.55`. <!-- x-release-please-version -->
 
 This README reflects the `xlabtg/teleton-agent` fork through merged PR [#480](https://github.com/xlabtg/teleton-agent/pull/480) / closed issue [#479](https://github.com/xlabtg/teleton-agent/issues/479). It was refreshed from the closed work history available at issue [#481](https://github.com/xlabtg/teleton-agent/issues/481): 236 closed issues and the 200 most recent merged pull requests as of the latest analyzed run.
 
