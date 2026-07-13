@@ -88,30 +88,30 @@ The highest-leverage findings are:
 
 ## 3. Findings index
 
-| ID        | Severity | Category         | Summary                                                                        | Task file |
-| --------- | -------- | ---------------- | ------------------------------------------------------------------------------ | --------- |
-| WORK7-001 | High     | data-integrity   | `knowledge_fts`/`tool_index_fts` triggers use a plain DELETE on external-content | [file](issues/WORK7-001-fts5-delete-triggers-plain-delete.md) |
-| WORK7-002 | High     | data-integrity   | `tool_index` INSERT OR REPLACE reassigns rowid and desyncs its FTS index         | [file](issues/WORK7-002-tool-index-insert-or-replace-rowid-churn.md) |
-| WORK7-003 | High     | financial-safety | Policy engine never enforces the daily TON budget (only per-task)                | [file](issues/WORK7-003-policy-engine-daily-ton-budget-never-enforced.md) |
-| WORK7-004 | High     | financial-safety | `withTxLock` releases the wallet mutex on timeout while the tx is in-flight       | [file](issues/WORK7-004-tx-lock-releases-mutex-on-timeout.md) |
-| WORK7-005 | High     | reliability      | `markdownToTelegramHtml` corrupts messages via `$` replacement patterns          | [file](issues/WORK7-005-markdown-placeholder-dollar-replacement-corruption.md) |
-| WORK7-006 | Medium   | security         | HTTP integration provider fetches caller URLs with no SSRF guard                 | [file](issues/WORK7-006-integration-provider-read-ssrf.md) |
-| WORK7-007 | Medium   | data-integrity   | Hybrid search leaves vector-only results unweighted (over-ranked)                | [file](issues/WORK7-007-hybrid-search-vector-only-score-unweighted.md) |
-| WORK7-008 | Medium   | data-integrity   | Empty re-embedding leaves the stale `tg_messages_vec` row in place               | [file](issues/WORK7-008-stale-message-vector-on-failed-reembed.md) |
-| WORK7-009 | Medium   | reliability      | `truncateToolResult` can still return a payload larger than `maxSize`            | [file](issues/WORK7-009-tool-result-truncator-cap-not-guaranteed.md) |
-| WORK7-010 | Medium   | financial-safety | `jetton_send` uses `decimals || 9`, mis-scaling 0-decimal jettons                | [file](issues/WORK7-010-jetton-send-zero-decimals.md) |
-| WORK7-011 | Medium   | reliability      | Event/webhook workflow triggers bypass the cron dedup/concurrency guard          | [file](issues/WORK7-011-workflow-event-webhook-bypass-dedup.md) |
-| WORK7-012 | Medium   | reliability      | Managed-agent inbox/results grow unbounded, rewritten per message (O(n²))         | [file](issues/WORK7-012-managed-agent-inbox-unbounded.md) |
-| WORK7-013 | Medium   | reliability      | `restartCount` never reset after recovery (permanent "degraded", cap exhausted)  | [file](issues/WORK7-013-managed-agent-restart-count-never-reset.md) |
-| WORK7-014 | Medium   | reliability      | Lifecycle SSE leaks its `stateChange` listener on a write error (no try/finally)  | [file](issues/WORK7-014-lifecycle-sse-listener-leak.md) |
-| WORK7-015 | Medium   | security         | `workspace_write` creates files `0o666` (inconsistent with the `0o600` append)    | [file](issues/WORK7-015-workspace-write-world-readable-files.md) |
-| WORK7-016 | Medium   | reliability      | Saving one config key reloads all inputs, discarding unsaved edits               | [file](issues/WORK7-016-config-save-clobbers-unsaved-edits.md) |
-| WORK7-017 | Medium   | reliability      | Security page `JSON.parse(approval.params)` at render crashes the whole page      | [file](issues/WORK7-017-security-approval-params-json-parse-render-crash.md) |
-| WORK7-018 | Medium   | reliability      | Bot bridge splits rendered HTML on whitespace → unbalanced tags Telegram rejects  | [file](issues/WORK7-018-bot-bridge-splits-html-mid-tag.md) |
-| WORK7-019 | Low      | reliability      | Network/Events mutations fire via `void`/`.then` with no catch (silent failure)   | [file](issues/WORK7-019-ui-mutations-swallow-promise-rejections.md) |
-| WORK7-020 | Low      | reliability      | Pipelines poll re-selects the newest run every 2s, yanking the user's selection   | [file](issues/WORK7-020-pipelines-poll-resets-selected-run.md) |
-| WORK7-021 | Low      | reliability      | `stripMarkupTags` over-consumes, deleting plain text after a tag                  | [file](issues/WORK7-021-strip-markup-tags-over-consumes-text.md) |
-| WORK7-022 | Medium   | security         | gocoon data dir holding `wallet.json` is created without `0o700`                  | [file](issues/WORK7-022-gocoon-data-dir-not-0700.md) |
+| ID        | Severity | Category         | Summary                                                                        | Task file | GitHub |
+| --------- | -------- | ---------------- | ------------------------------------------------------------------------------ | --------- | ------ |
+| WORK7-001 | High     | data-integrity   | `knowledge_fts`/`tool_index_fts` triggers use a plain DELETE on external-content | [file](issues/WORK7-001-fts5-delete-triggers-plain-delete.md) | [#691](https://github.com/xlabtg/teleton-agent/issues/691) |
+| WORK7-002 | High     | data-integrity   | `tool_index` INSERT OR REPLACE reassigns rowid and desyncs its FTS index         | [file](issues/WORK7-002-tool-index-insert-or-replace-rowid-churn.md) | [#692](https://github.com/xlabtg/teleton-agent/issues/692) |
+| WORK7-003 | High     | financial-safety | Policy engine never enforces the daily TON budget (only per-task)                | [file](issues/WORK7-003-policy-engine-daily-ton-budget-never-enforced.md) | [#693](https://github.com/xlabtg/teleton-agent/issues/693) |
+| WORK7-004 | High     | financial-safety | `withTxLock` releases the wallet mutex on timeout while the tx is in-flight       | [file](issues/WORK7-004-tx-lock-releases-mutex-on-timeout.md) | [#694](https://github.com/xlabtg/teleton-agent/issues/694) |
+| WORK7-005 | High     | reliability      | `markdownToTelegramHtml` corrupts messages via `$` replacement patterns          | [file](issues/WORK7-005-markdown-placeholder-dollar-replacement-corruption.md) | [#695](https://github.com/xlabtg/teleton-agent/issues/695) |
+| WORK7-006 | Medium   | security         | HTTP integration provider fetches caller URLs with no SSRF guard                 | [file](issues/WORK7-006-integration-provider-read-ssrf.md) | [#696](https://github.com/xlabtg/teleton-agent/issues/696) |
+| WORK7-007 | Medium   | data-integrity   | Hybrid search leaves vector-only results unweighted (over-ranked)                | [file](issues/WORK7-007-hybrid-search-vector-only-score-unweighted.md) | [#697](https://github.com/xlabtg/teleton-agent/issues/697) |
+| WORK7-008 | Medium   | data-integrity   | Empty re-embedding leaves the stale `tg_messages_vec` row in place               | [file](issues/WORK7-008-stale-message-vector-on-failed-reembed.md) | [#698](https://github.com/xlabtg/teleton-agent/issues/698) |
+| WORK7-009 | Medium   | reliability      | `truncateToolResult` can still return a payload larger than `maxSize`            | [file](issues/WORK7-009-tool-result-truncator-cap-not-guaranteed.md) | [#699](https://github.com/xlabtg/teleton-agent/issues/699) |
+| WORK7-010 | Medium   | financial-safety | `jetton_send` uses `decimals || 9`, mis-scaling 0-decimal jettons                | [file](issues/WORK7-010-jetton-send-zero-decimals.md) | [#700](https://github.com/xlabtg/teleton-agent/issues/700) |
+| WORK7-011 | Medium   | reliability      | Event/webhook workflow triggers bypass the cron dedup/concurrency guard          | [file](issues/WORK7-011-workflow-event-webhook-bypass-dedup.md) | [#701](https://github.com/xlabtg/teleton-agent/issues/701) |
+| WORK7-012 | Medium   | reliability      | Managed-agent inbox/results grow unbounded, rewritten per message (O(n²))         | [file](issues/WORK7-012-managed-agent-inbox-unbounded.md) | [#702](https://github.com/xlabtg/teleton-agent/issues/702) |
+| WORK7-013 | Medium   | reliability      | `restartCount` never reset after recovery (permanent "degraded", cap exhausted)  | [file](issues/WORK7-013-managed-agent-restart-count-never-reset.md) | [#703](https://github.com/xlabtg/teleton-agent/issues/703) |
+| WORK7-014 | Medium   | reliability      | Lifecycle SSE leaks its `stateChange` listener on a write error (no try/finally)  | [file](issues/WORK7-014-lifecycle-sse-listener-leak.md) | [#704](https://github.com/xlabtg/teleton-agent/issues/704) |
+| WORK7-015 | Medium   | security         | `workspace_write` creates files `0o666` (inconsistent with the `0o600` append)    | [file](issues/WORK7-015-workspace-write-world-readable-files.md) | [#705](https://github.com/xlabtg/teleton-agent/issues/705) |
+| WORK7-016 | Medium   | reliability      | Saving one config key reloads all inputs, discarding unsaved edits               | [file](issues/WORK7-016-config-save-clobbers-unsaved-edits.md) | [#706](https://github.com/xlabtg/teleton-agent/issues/706) |
+| WORK7-017 | Medium   | reliability      | Security page `JSON.parse(approval.params)` at render crashes the whole page      | [file](issues/WORK7-017-security-approval-params-json-parse-render-crash.md) | [#707](https://github.com/xlabtg/teleton-agent/issues/707) |
+| WORK7-018 | Medium   | reliability      | Bot bridge splits rendered HTML on whitespace → unbalanced tags Telegram rejects  | [file](issues/WORK7-018-bot-bridge-splits-html-mid-tag.md) | [#708](https://github.com/xlabtg/teleton-agent/issues/708) |
+| WORK7-019 | Low      | reliability      | Network/Events mutations fire via `void`/`.then` with no catch (silent failure)   | [file](issues/WORK7-019-ui-mutations-swallow-promise-rejections.md) | [#709](https://github.com/xlabtg/teleton-agent/issues/709) |
+| WORK7-020 | Low      | reliability      | Pipelines poll re-selects the newest run every 2s, yanking the user's selection   | [file](issues/WORK7-020-pipelines-poll-resets-selected-run.md) | [#710](https://github.com/xlabtg/teleton-agent/issues/710) |
+| WORK7-021 | Low      | reliability      | `stripMarkupTags` over-consumes, deleting plain text after a tag                  | [file](issues/WORK7-021-strip-markup-tags-over-consumes-text.md) | [#711](https://github.com/xlabtg/teleton-agent/issues/711) |
+| WORK7-022 | Medium   | security         | gocoon data dir holding `wallet.json` is created without `0o700`                  | [file](issues/WORK7-022-gocoon-data-dir-not-0700.md) | [#712](https://github.com/xlabtg/teleton-agent/issues/712) |
 
 ## 4. Findings detail
 

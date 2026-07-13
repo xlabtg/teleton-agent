@@ -43,6 +43,7 @@ output:
   report: "improvements/work7/AUDIT_V7_REPORT.md"
   issues_dir: "improvements/work7/issues"
   validation_dir: "improvements/work7/validation"
+  filed_issues: "#691-#712"
 finding_policy:
   create_task_file_for_severity:
     - "critical"

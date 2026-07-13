@@ -6,7 +6,7 @@ audit-source: "#689"
 finding-id: "WORK7-007"
 severity: "medium"
 category: "data-integrity"
-github-issue: ""
+github-issue: "https://github.com/xlabtg/teleton-agent/issues/697"
 ---
 
 ## Problem Description
