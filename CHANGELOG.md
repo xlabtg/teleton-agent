@@ -12,6 +12,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [CONTRIBUTING.md](CONTRIBUTING.md#commit-conventions)). The entries below this
 > note are preserved as the historical, manually-maintained record.
 
+## [0.8.56](https://github.com/xlabtg/teleton-agent/compare/v0.8.55...v0.8.56) (2026-07-14)
+
+
+### Bug Fixes
+
+* **agents:** ограничить хранение межагентских сообщений ([d81f1f3](https://github.com/xlabtg/teleton-agent/commit/d81f1f38f108fddf2d836208e3bbf091878d6fc8))
+* **agents:** ограничить хранение межагентских сообщений ([96bcf06](https://github.com/xlabtg/teleton-agent/commit/96bcf064e91baaca9deb3272e2ce6187613ecd66))
+* **agents:** сбрасывать бюджет перезапусков после стабилизации ([b56b313](https://github.com/xlabtg/teleton-agent/commit/b56b3136a41f378f493231a4d60e77e0525bd879))
+* **agents:** сбрасывать бюджет перезапусков после стабилизации ([b757172](https://github.com/xlabtg/teleton-agent/commit/b757172848b3964562cbc4f72daed89294a7ff1f))
+* **agent:** гарантировать лимит размера результата инструмента ([1fe3662](https://github.com/xlabtg/teleton-agent/commit/1fe36624cb418ef1700d497f0f854c6a2cf11697))
+* **agent:** гарантировать лимит результата инструмента ([635c7a3](https://github.com/xlabtg/teleton-agent/commit/635c7a3abf97884062e78b08ff3447c175e21b07))
+* **autonomous:** ограничить суточный расход TON ([3b497ab](https://github.com/xlabtg/teleton-agent/commit/3b497ab4128d3f651a222c0b0e7ceabccab34867))
+* **config:** не сбрасывать несохранённые правки при сохранении поля ([3b886de](https://github.com/xlabtg/teleton-agent/commit/3b886de2df8ff78f064b3a97943e26da1771d7aa))
+* **config:** сохранять локальные правки соседних полей ([0fd46f4](https://github.com/xlabtg/teleton-agent/commit/0fd46f44f84362ff7abf46b2531d2d2b267121c6))
+* **gocoon:** restrict wallet data permissions ([4a6a171](https://github.com/xlabtg/teleton-agent/commit/4a6a171eaf57d5f281a18d0f634c4f7660a948ad))
+* **gocoon:** закрыть доступ к данным кошелька ([9d195b4](https://github.com/xlabtg/teleton-agent/commit/9d195b4ae10c60a7e822b6389debbb196c0c645b))
+* **integrations:** защитить HTTP provider от SSRF ([380dae0](https://github.com/xlabtg/teleton-agent/commit/380dae0f425363c30be6a83d666a28367c0d3da4))
+* **integrations:** защитить HTTP provider от SSRF ([201f1d6](https://github.com/xlabtg/teleton-agent/commit/201f1d61a429b0c8ba9135fd30c7b70761482cb4))
+* **memory:** исправить повреждение внешних FTS-индексов ([61242e2](https://github.com/xlabtg/teleton-agent/commit/61242e2b5ca2d2f81e7f1eab0d547b0a3dbb42ad))
+* **memory:** исправить удаление из внешних FTS-индексов ([48e08be](https://github.com/xlabtg/teleton-agent/commit/48e08becc8848209c390feaf050bb8ec1bcdc251))
+* **memory:** удалять устаревший вектор при пустом re-embed ([6f08328](https://github.com/xlabtg/teleton-agent/commit/6f08328827404655e3b8c9ceb158438f21f3fe35))
+* **memory:** удалять устаревший вектор сообщения ([0e9d491](https://github.com/xlabtg/teleton-agent/commit/0e9d491abe5464a33a60c6b12a0facbf6205b80b))
+* **memory:** учитывать вес vector-only результатов ([62607bb](https://github.com/xlabtg/teleton-agent/commit/62607bb7b1a48c12a034539b8ff848f9d55b4a50))
+* **memory:** учитывать вес vector-only результатов гибридного поиска ([d4b03db](https://github.com/xlabtg/teleton-agent/commit/d4b03db638a62e9383268e55facc40f791e8a5bf))
+* **sanitize:** сохранять текст после закрытия тега ([83c9a78](https://github.com/xlabtg/teleton-agent/commit/83c9a78e4bec8576066e023b50b9f5b6a349eec5))
+* **sanitize:** сохранять текст после закрытия тега ([d79bedc](https://github.com/xlabtg/teleton-agent/commit/d79bedc0ee5e29c997154558ef2e35f5ad034d26))
+* **security:** безопасно отображать параметры согласования ([2cf8dea](https://github.com/xlabtg/teleton-agent/commit/2cf8deaa0c6f429aafb3b5204c96e83bf6a4414c))
+* **security:** не падать на некорректных параметрах согласования ([6a5b5d9](https://github.com/xlabtg/teleton-agent/commit/6a5b5d9799341467b178402b4a64438b05983387))
+* **security:** удалить неиспользуемый JSON-форматтер ([8bdb845](https://github.com/xlabtg/teleton-agent/commit/8bdb845ec86ef7d5928780cc49f4b98122bccefa))
+* **sse:** очищать lifecycle listener при ошибках стрима ([b7d6f23](https://github.com/xlabtg/teleton-agent/commit/b7d6f23c4f0f66ff9c681614b673244f0e219f55))
+* **sse:** очищать lifecycle listener при ошибках стрима ([cdcc0a3](https://github.com/xlabtg/teleton-agent/commit/cdcc0a32adfa49615259b47e3259ec26f75d5e66))
+* **telegram:** безопасно разбивать длинные HTML-ответы ([4f2d706](https://github.com/xlabtg/teleton-agent/commit/4f2d706e37f6f3ffa66badd2c2b4f9785be66344))
+* **telegram:** безопасно разбивать длинные HTML-ответы ([4e30ad3](https://github.com/xlabtg/teleton-agent/commit/4e30ad35ff7f00d6f7c1373be1f5145ec4a2009a))
+* **telegram:** сохранять dollar-паттерны в markdown ([5931251](https://github.com/xlabtg/teleton-agent/commit/593125171bdc0ee250dbc8e5a7c8401e8e43fa38))
+* **telegram:** сохранять dollar-паттерны при форматировании Markdown ([59a5b1a](https://github.com/xlabtg/teleton-agent/commit/59a5b1a035c7e4c2b3a8fa72be1ea2ea72ba6bf9))
+* **ton:** не отпускать tx-lock до завершения операции ([b9962b4](https://github.com/xlabtg/teleton-agent/commit/b9962b479ba139f03aee96f6b32041e2e21c3d11))
+* **ton:** не отпускать tx-lock до завершения операции ([8e91fcd](https://github.com/xlabtg/teleton-agent/commit/8e91fcda03fa75d31152d021df0e1ce12d24c409))
+* **ton:** сохранить нулевую точность jetton ([423664c](https://github.com/xlabtg/teleton-agent/commit/423664c18918095eaacfa8fb16392057a92b58ef))
+* **ton:** сохранить нулевую точность jetton ([d5e8d88](https://github.com/xlabtg/teleton-agent/commit/d5e8d88d83dbb5463dd26f25c28d6e4ca89dd95e))
+* **tools:** сохранить rowid при переиндексации инструментов ([24a71e5](https://github.com/xlabtg/teleton-agent/commit/24a71e5ebd6647066207bb62111d34500c60cc99))
+* **tools:** сохранить rowid при переиндексации инструментов ([1662f4b](https://github.com/xlabtg/teleton-agent/commit/1662f4b563e5090348f869525305832aa84d98ae))
+* **web:** показывать ошибки сетевых UI-действий ([d07cc4f](https://github.com/xlabtg/teleton-agent/commit/d07cc4fe5f16331892ece5bd855e978090793d6c))
+* **web:** показывать ошибки сетевых UI-действий ([c14e26f](https://github.com/xlabtg/teleton-agent/commit/c14e26ff61dbe4eec6a2279c93db698f639a1824))
+* **web:** сохранять выбранный запуск pipeline при опросе ([07e6d54](https://github.com/xlabtg/teleton-agent/commit/07e6d54a14e1d23aee94d6ec27dc6021094ae6df))
+* **web:** сохранять выбранный запуск при опросе ([7838871](https://github.com/xlabtg/teleton-agent/commit/783887136ee3c144af562d48edf16316e2d572ec))
+* **workflows:** prevent concurrent workflow execution ([279e475](https://github.com/xlabtg/teleton-agent/commit/279e475302ba2d527e9bc8dab758d37be0108a8e))
+* **workflows:** предотвратить параллельный запуск workflow ([deef7d3](https://github.com/xlabtg/teleton-agent/commit/deef7d365654d94c81ca8550f0a7f9d3468347b6))
+* **workspace:** закрыть права новых файлов ([36c01a2](https://github.com/xlabtg/teleton-agent/commit/36c01a2ccaeafe46667eaa801d9eaeb6dea273b8))
+* **workspace:** закрыть права новых файлов ([f2c6f97](https://github.com/xlabtg/teleton-agent/commit/f2c6f97cbdd54e84d57f587525282405e419d39d))
+
 ## [0.8.55](https://github.com/xlabtg/teleton-agent/compare/v0.8.54...v0.8.55) (2026-07-02)
 
 
