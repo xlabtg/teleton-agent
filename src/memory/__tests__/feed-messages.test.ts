@@ -448,6 +448,19 @@ describe("MessageStore", () => {
   // ============================================
 
   describe("vector insert isolation", () => {
+    it("removes the stale vector when a re-embed yields no embedding", async () => {
+      ensurePlainVectorTable(db);
+      const firstEmbedding = [0.1, 0.2, 0.3];
+      const changingEmbedder = makeEmbedder(firstEmbedding);
+      const vecStore = new MessageStore(db, changingEmbedder, true);
+
+      await vecStore.storeMessage(makeMessage({ id: "m1", text: "alpha" }));
+      vi.mocked(changingEmbedder.embedQuery).mockResolvedValueOnce([]);
+      await vecStore.storeMessage(makeMessage({ id: "m1", text: "beta" }));
+
+      expect(db.prepare("SELECT id FROM tg_messages_vec WHERE id = 'm1'").get()).toBeUndefined();
+    });
+
     it("stores message and vector for a non-384-dim provider (Voyage 1024)", async () => {
       const vdb = createVectorDb(1024);
       if (!vdb) return; // sqlite-vec unavailable in this environment

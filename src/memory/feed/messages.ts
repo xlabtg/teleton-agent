@@ -148,13 +148,15 @@ export class MessageStore {
     // Insert the vector in its own transaction so a vec0 failure (e.g. a
     // dimension mismatch when the active embedder differs from the table's
     // configured dimension) cannot roll back the already-stored message row.
-    if (this.vectorEnabled && embedding.length > 0 && message.text) {
+    if (this.vectorEnabled) {
       try {
         this.db.transaction(() => {
           this.db.prepare(`DELETE FROM tg_messages_vec WHERE id = ?`).run(message.id);
-          this.db
-            .prepare(`INSERT INTO tg_messages_vec (id, embedding) VALUES (?, ?)`)
-            .run(message.id, embeddingBuffer);
+          if (embedding.length > 0 && message.text) {
+            this.db
+              .prepare(`INSERT INTO tg_messages_vec (id, embedding) VALUES (?, ?)`)
+              .run(message.id, embeddingBuffer);
+          }
         })();
       } catch (error) {
         log.warn(
