@@ -9,6 +9,7 @@ import {
   type IntegrationResult,
 } from "./base.js";
 import type { IntegrationAuthManager } from "./auth.js";
+import { createPinnedOutboundFetch } from "../outbound-url-guard.js";
 
 export interface IntegrationProviderDeps {
   auth: IntegrationAuthManager;
@@ -18,6 +19,10 @@ export interface IntegrationProviderDeps {
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+const INTEGRATION_URL_GUARD = {
+  allowedProtocols: ["http:", "https:"] as const,
+  label: "Integration HTTP URL",
+};
 
 abstract class BaseIntegrationProvider implements Integration {
   readonly id: string;
@@ -170,10 +175,16 @@ export class HttpIntegrationProvider extends BaseIntegrationProvider {
     const timeoutMs = numberValue(this.entity.config.timeoutMs) ?? DEFAULT_TIMEOUT_MS;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let target: Awaited<ReturnType<typeof createPinnedOutboundFetch>> | undefined;
     try {
-      return await this.fetchImpl(url, { ...init, signal: controller.signal });
+      target = await createPinnedOutboundFetch(url, {
+        ...INTEGRATION_URL_GUARD,
+        fetchImpl: this.fetchImpl,
+      });
+      return await target.fetch(target.url, { ...init, signal: controller.signal });
     } finally {
       clearTimeout(timer);
+      await target?.close();
     }
   }
 }

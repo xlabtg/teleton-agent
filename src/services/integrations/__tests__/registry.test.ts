@@ -1,13 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import Database from "better-sqlite3";
-import { createServer, type Server } from "node:http";
-import { once } from "node:events";
 import {
   IntegrationAuthManager,
   IntegrationRateLimitError,
   IntegrationRateLimiter,
   IntegrationRegistry,
 } from "../index.js";
+
+const dnsMocks = vi.hoisted(() => ({
+  lookup: vi.fn(),
+}));
+
+vi.mock("node:dns/promises", () => dnsMocks);
 
 vi.mock("../../../utils/logger.js", () => ({
   createLogger: vi.fn(() => ({
@@ -18,58 +22,16 @@ vi.mock("../../../utils/logger.js", () => ({
   })),
 }));
 
-async function startJsonServer(): Promise<{ server: Server; url: string }> {
-  const server = createServer((req, res) => {
-    if (req.url === "/health") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true }));
-      return;
-    }
-
-    if (req.url === "/echo") {
-      let body = "";
-      req.on("data", (chunk) => {
-        body += String(chunk);
-      });
-      req.on("end", () => {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            method: req.method,
-            authorization: req.headers.authorization ?? null,
-            body: body ? JSON.parse(body) : null,
-          })
-        );
-      });
-      return;
-    }
-
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "not found" }));
-  });
-  server.listen(0, "127.0.0.1");
-  await once(server, "listening");
-  const address = server.address();
-  if (!address || typeof address === "string") {
-    throw new Error("Failed to start test server");
-  }
-  return { server, url: `http://127.0.0.1:${address.port}` };
-}
-
 describe("IntegrationRegistry", () => {
   let db: Database.Database;
-  let server: Server | null;
 
   beforeEach(() => {
     db = new Database(":memory:");
-    server = null;
+    dnsMocks.lookup.mockReset();
+    dnsMocks.lookup.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
   });
 
-  afterEach(async () => {
-    if (server) {
-      server.close();
-      await once(server, "close");
-    }
+  afterEach(() => {
     db.close();
   });
 
@@ -195,23 +157,46 @@ describe("IntegrationRegistry", () => {
   });
 
   it("executes a configured HTTP action with stored authentication", async () => {
-    const started = await startJsonServer();
-    server = started.server;
-    const registry = new IntegrationRegistry({ db, credentialKey: "test-master-key" });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : String(input));
+      if (url.pathname === "/health") {
+        return new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      if (url.pathname === "/echo") {
+        const headers = new Headers(init?.headers);
+        return new Response(
+          JSON.stringify({
+            method: init?.method,
+            authorization: headers.get("authorization"),
+            body: init?.body ? JSON.parse(String(init.body)) : null,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+      return new Response(JSON.stringify({ error: "not found" }), { status: 404 });
+    });
+    const registry = new IntegrationRegistry({
+      db,
+      credentialKey: "test-master-key",
+      fetchImpl: fetchMock as typeof fetch,
+    });
     const integration = registry.create({
       id: "echo-api",
       name: "Echo API",
       type: "api",
       provider: "custom-http",
       config: {
-        baseUrl: started.url,
+        baseUrl: "https://api.example.com",
         actions: {
           echo: { method: "POST", path: "/echo" },
         },
         rateLimit: { requestsPerMinute: 10 },
       },
       auth: { type: "api_key" },
-      healthCheckUrl: `${started.url}/health`,
+      healthCheckUrl: "https://api.example.com/health",
     });
 
     const credential = registry.auth.createCredential({
@@ -235,5 +220,6 @@ describe("IntegrationRegistry", () => {
       authorization: "Bearer secret-token",
       body: { message: "hello" },
     });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

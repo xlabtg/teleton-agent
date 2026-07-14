@@ -33,6 +33,7 @@ export interface OutboundUrlGuardOptions {
   allowedProtocols: readonly string[];
   label: string;
   lookup?: LookupFn;
+  fetchImpl?: typeof fetch;
 }
 
 const BLOCKED_HOSTNAMES = new Set(["localhost", "local", "metadata", "metadata.google.internal"]);
@@ -129,7 +130,7 @@ export async function fetchValidatedOutboundUrl(
   const dispatcher = createPinnedDispatcher(target, options.label);
 
   try {
-    const response = await fetch(target.url.toString(), {
+    const response = await (options.fetchImpl ?? fetch)(target.url.toString(), {
       ...init,
       redirect: "manual",
       dispatcher,
@@ -161,7 +162,7 @@ export async function createPinnedOutboundFetch(
       assertPinnedFetchTarget(input, target, options.label);
       if (closed) throw new Error(`${options.label} pinned fetch is already closed`);
 
-      return fetch(input, {
+      return (options.fetchImpl ?? fetch)(input, {
         ...init,
         redirect: "manual",
         dispatcher,
