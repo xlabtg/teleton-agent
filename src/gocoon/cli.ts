@@ -1,6 +1,6 @@
 import { execFile, spawn } from "child_process";
 import { promisify } from "util";
-import { existsSync, mkdirSync } from "fs";
+import { chmodSync, existsSync, mkdirSync } from "fs";
 import { createLogger } from "../utils/logger.js";
 import { fetchWithTimeout } from "../utils/fetch.js";
 import { ensureGocoonBinaries } from "./installer.js";
@@ -15,6 +15,8 @@ import {
 const log = createLogger("gocoon");
 const execFileAsync = promisify(execFile);
 const MAX_BUFFER = 8 * 1024 * 1024;
+const PRIVATE_DIR_MODE = 0o700;
+const PRIVATE_FILE_MODE = 0o600;
 
 // Run a gocoon subcommand and capture stdout (for --json / short commands).
 export async function runGocoon(args: string[], timeoutMs = 60_000): Promise<string> {
@@ -68,8 +70,15 @@ export function walletExists(): boolean {
   return existsSync(walletPath()) && existsSync(clientConfigPath());
 }
 
+function hardenGocoonDataPermissions(): void {
+  mkdirSync(gocoonDataDir(), { recursive: true, mode: PRIVATE_DIR_MODE });
+  chmodSync(gocoonDataDir(), PRIVATE_DIR_MODE);
+  if (existsSync(walletPath())) chmodSync(walletPath(), PRIVATE_FILE_MODE);
+}
+
 // Create the COCOON wallet, or reuse the existing one (stable funding address).
 export async function gocoonInit(): Promise<InitSummary> {
+  hardenGocoonDataPermissions();
   if (walletExists()) {
     const info = await walletInfo();
     return {
@@ -81,10 +90,10 @@ export async function gocoonInit(): Promise<InitSummary> {
       configPath: clientConfigPath(),
     };
   }
-  mkdirSync(gocoonDataDir(), { recursive: true });
   const j = parseJson(
     await runGocoon(["init", "--dir", gocoonDataDir(), "--json", "--force"], 120_000)
   );
+  hardenGocoonDataPermissions();
   return {
     fundAddress: String(j.fund_address ?? ""),
     ownerAddress: String(j.owner_address ?? ""),
