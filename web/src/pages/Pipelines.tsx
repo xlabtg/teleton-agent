@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   api,
   type PipelineData,
@@ -8,6 +8,7 @@ import {
   type PipelineStepData,
 } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { selectRunIdToLoad } from "../lib/pipelineRunSelection";
 
 interface StepDraft {
   id: string;
@@ -438,6 +439,7 @@ export function Pipelines() {
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const selectedRunIdRef = useRef<string | null>(null);
 
   const selected = useMemo(
     () => pipelines.find((pipeline) => pipeline.id === selectedId) ?? pipelines[0] ?? null,
@@ -462,7 +464,9 @@ export function Pipelines() {
   const loadRunDetail = useCallback(async (pipelineId: string, runId: string) => {
     try {
       const res = await api.pipelineRunDetail(pipelineId, runId);
-      setSelectedRun(res.data ?? null);
+      const detail = res.data ?? null;
+      selectedRunIdRef.current = detail?.run.id ?? null;
+      setSelectedRun(detail);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -475,9 +479,14 @@ export function Pipelines() {
         const res = await api.pipelineRunsList(pipelineId);
         const next = res.data ?? [];
         setRuns(next);
-        if (next[0]) {
-          await loadRunDetail(pipelineId, next[0].id);
+        const runId = selectRunIdToLoad(
+          selectedRunIdRef.current,
+          next.map((run) => run.id)
+        );
+        if (runId) {
+          await loadRunDetail(pipelineId, runId);
         } else {
+          selectedRunIdRef.current = null;
           setSelectedRun(null);
         }
       } catch (err) {
