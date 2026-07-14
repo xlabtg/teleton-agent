@@ -16,6 +16,7 @@ import {
   type SecurityValidationLogEntry,
 } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { formatApprovalParams } from "../lib/formatApprovalParams";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -658,14 +659,6 @@ function PolicyActionBadge({ action }: { action: "allow" | "deny" | "require_app
   );
 }
 
-function compactJson(value: unknown): string {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return "{}";
-  }
-}
-
 function policyToYaml(policy: SecurityPolicy): string {
   return JSON.stringify(
     {
@@ -1017,7 +1010,7 @@ function ZeroTrustSection() {
                           fontSize: "11px",
                         }}
                       >
-                        {compactJson(JSON.parse(approval.params))}
+                        {formatApprovalParams(approval.params)}
                       </pre>
                       <button
                         onClick={() => resolveApproval(approval.id, "approve")}
