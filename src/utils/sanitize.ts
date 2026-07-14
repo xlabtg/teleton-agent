@@ -13,13 +13,15 @@ function stripMarkupTags(text: string): string {
     if (text[i] === "<" && isTagStart(text, i)) {
       let end = text.indexOf(">", i + 1);
       if (end !== -1) {
-        let next = end + 1;
-        while (next < text.length) {
-          const fragmentEnd = text.indexOf(">", next);
-          if (fragmentEnd === -1) break;
-          if (!isTagNameFragment(text.slice(next, fragmentEnd))) break;
-          end = fragmentEnd;
-          next = end + 1;
+        if (text.slice(i + 1, end).includes("<")) {
+          let next = end + 1;
+          while (next < text.length) {
+            const fragmentEnd = text.indexOf(">", next);
+            if (fragmentEnd === -1) break;
+            if (!isTagNameFragment(text.slice(next, fragmentEnd))) break;
+            end = fragmentEnd;
+            next = end + 1;
+          }
         }
         i = end;
         continue;

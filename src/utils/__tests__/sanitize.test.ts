@@ -265,6 +265,11 @@ describe("sanitizeForPrompt", () => {
       expect(sanitizeForPrompt(input)).toBe("3 < 5 and 7 > 2");
     });
 
+    it("should preserve plain text after a tag when it is followed by >", () => {
+      expect(sanitizeForPrompt("<a>foo>bar")).toBe("foo>bar");
+      expect(sanitizeForPrompt("<b>hello</b> world")).toBe("hello world");
+    });
+
     it("should handle malformed tags", () => {
       const input = "Text <incomplete";
       expect(sanitizeForPrompt(input)).toBe("Text <incomplete");
@@ -821,6 +826,10 @@ describe("sanitizeForContext", () => {
 });
 
 describe("sanitizeTaskDescription", () => {
+  it("should preserve plain text after a tag when it is followed by >", () => {
+    expect(sanitizeTaskDescription("<a>foo>bar")).toBe("foo>bar");
+  });
+
   it("should remove fragmented nested script tags", () => {
     const input = "<scrip<script>t>alert(1)</scrip<script>t>";
     const result = sanitizeTaskDescription(input);
