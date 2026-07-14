@@ -272,11 +272,13 @@ export function ensureSchema(db: Database.Database): void {
     END;
 
     CREATE TRIGGER IF NOT EXISTS knowledge_fts_delete AFTER DELETE ON knowledge BEGIN
-      DELETE FROM knowledge_fts WHERE rowid = old.rowid;
+      INSERT INTO knowledge_fts(knowledge_fts, rowid, text, id, path, source)
+      VALUES ('delete', old.rowid, old.text, old.id, old.path, old.source);
     END;
 
     CREATE TRIGGER IF NOT EXISTS knowledge_fts_update AFTER UPDATE ON knowledge BEGIN
-      DELETE FROM knowledge_fts WHERE rowid = old.rowid;
+      INSERT INTO knowledge_fts(knowledge_fts, rowid, text, id, path, source)
+      VALUES ('delete', old.rowid, old.text, old.id, old.path, old.source);
       INSERT INTO knowledge_fts(rowid, text, id, path, source)
       VALUES (new.rowid, new.text, new.id, new.path, new.source);
     END;
@@ -1106,7 +1108,7 @@ function repairAutonomousTaskChildForeignKeys(db: Database.Database): number {
   return tablesToRepair.length;
 }
 
-export const CURRENT_SCHEMA_VERSION = "1.40.0";
+export const CURRENT_SCHEMA_VERSION = "1.41.0";
 
 export function runMigrations(db: Database.Database): void {
   const currentVersion = getSchemaVersion(db);
@@ -1298,11 +1300,13 @@ export function runMigrations(db: Database.Database): void {
         END;
 
         CREATE TRIGGER IF NOT EXISTS tool_index_fts_delete AFTER DELETE ON tool_index BEGIN
-          DELETE FROM tool_index_fts WHERE rowid = old.rowid;
+          INSERT INTO tool_index_fts(tool_index_fts, rowid, search_text, name)
+          VALUES ('delete', old.rowid, old.search_text, old.name);
         END;
 
         CREATE TRIGGER IF NOT EXISTS tool_index_fts_update AFTER UPDATE ON tool_index BEGIN
-          DELETE FROM tool_index_fts WHERE rowid = old.rowid;
+          INSERT INTO tool_index_fts(tool_index_fts, rowid, search_text, name)
+          VALUES ('delete', old.rowid, old.search_text, old.name);
           INSERT INTO tool_index_fts(rowid, search_text, name)
           VALUES (new.rowid, new.search_text, new.name);
         END;
@@ -2421,6 +2425,67 @@ export function runMigrations(db: Database.Database): void {
       log.info("Migration 1.40.0 complete: tg_messages_fts triggers repaired and index rebuilt");
     } catch (error) {
       log.error({ err: error }, "Migration 1.40.0 failed");
+      throw error;
+    }
+  }
+
+  if (!currentVersion || versionLessThan(currentVersion, "1.41.0")) {
+    log.info("Running migration 1.41.0: Repair and rebuild external-content FTS indexes");
+    try {
+      if (tableExists(db, "knowledge") && tableExists(db, "knowledge_fts")) {
+        db.exec(`
+          DROP TRIGGER IF EXISTS knowledge_fts_insert;
+          DROP TRIGGER IF EXISTS knowledge_fts_delete;
+          DROP TRIGGER IF EXISTS knowledge_fts_update;
+
+          CREATE TRIGGER knowledge_fts_insert AFTER INSERT ON knowledge BEGIN
+            INSERT INTO knowledge_fts(rowid, text, id, path, source)
+            VALUES (new.rowid, new.text, new.id, new.path, new.source);
+          END;
+
+          CREATE TRIGGER knowledge_fts_delete AFTER DELETE ON knowledge BEGIN
+            INSERT INTO knowledge_fts(knowledge_fts, rowid, text, id, path, source)
+            VALUES ('delete', old.rowid, old.text, old.id, old.path, old.source);
+          END;
+
+          CREATE TRIGGER knowledge_fts_update AFTER UPDATE ON knowledge BEGIN
+            INSERT INTO knowledge_fts(knowledge_fts, rowid, text, id, path, source)
+            VALUES ('delete', old.rowid, old.text, old.id, old.path, old.source);
+            INSERT INTO knowledge_fts(rowid, text, id, path, source)
+            VALUES (new.rowid, new.text, new.id, new.path, new.source);
+          END;
+        `);
+        db.prepare(`INSERT INTO knowledge_fts(knowledge_fts) VALUES ('rebuild')`).run();
+      }
+
+      if (tableExists(db, "tool_index") && tableExists(db, "tool_index_fts")) {
+        db.exec(`
+          DROP TRIGGER IF EXISTS tool_index_fts_insert;
+          DROP TRIGGER IF EXISTS tool_index_fts_delete;
+          DROP TRIGGER IF EXISTS tool_index_fts_update;
+
+          CREATE TRIGGER tool_index_fts_insert AFTER INSERT ON tool_index BEGIN
+            INSERT INTO tool_index_fts(rowid, search_text, name)
+            VALUES (new.rowid, new.search_text, new.name);
+          END;
+
+          CREATE TRIGGER tool_index_fts_delete AFTER DELETE ON tool_index BEGIN
+            INSERT INTO tool_index_fts(tool_index_fts, rowid, search_text, name)
+            VALUES ('delete', old.rowid, old.search_text, old.name);
+          END;
+
+          CREATE TRIGGER tool_index_fts_update AFTER UPDATE ON tool_index BEGIN
+            INSERT INTO tool_index_fts(tool_index_fts, rowid, search_text, name)
+            VALUES ('delete', old.rowid, old.search_text, old.name);
+            INSERT INTO tool_index_fts(rowid, search_text, name)
+            VALUES (new.rowid, new.search_text, new.name);
+          END;
+        `);
+        db.prepare(`INSERT INTO tool_index_fts(tool_index_fts) VALUES ('rebuild')`).run();
+      }
+      log.info("Migration 1.41.0 complete: External-content FTS indexes repaired and rebuilt");
+    } catch (error) {
+      log.error({ err: error }, "Migration 1.41.0 failed");
       throw error;
     }
   }
