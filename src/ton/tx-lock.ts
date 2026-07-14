@@ -8,7 +8,7 @@ let pending: Promise<void> = Promise.resolve();
 const TX_LOCK_TIMEOUT_MS = 60_000;
 
 export function withTxLock<T>(fn: () => Promise<T>): Promise<T> {
-  const guarded = () => {
+  const guarded = (): { execute: Promise<T>; completion: Promise<void> } => {
     let timerId: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timerId = setTimeout(
@@ -16,12 +16,16 @@ export function withTxLock<T>(fn: () => Promise<T>): Promise<T> {
         TX_LOCK_TIMEOUT_MS
       );
     });
-    return Promise.race([fn(), timeoutPromise]).finally(() => clearTimeout(timerId));
+    const operation = fn();
+    const execute = Promise.race([operation, timeoutPromise]).finally(() => clearTimeout(timerId));
+    const completion = operation.then(
+      () => {},
+      () => {}
+    );
+    return { execute, completion };
   };
-  const execute = pending.then(guarded, guarded);
-  pending = execute.then(
-    () => {},
-    () => {}
-  );
+  const turn = pending.then(guarded, guarded);
+  const execute = turn.then(({ execute }) => execute);
+  pending = turn.then(({ completion }) => completion);
   return execute;
 }
