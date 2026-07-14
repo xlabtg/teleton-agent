@@ -96,7 +96,7 @@ export const workspaceWriteExecutor: ToolExecutor<WorkspaceWriteParams> = async 
       const { openSync, writeSync, closeSync, constants } = await import("fs");
       const flags =
         constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW;
-      const fd = openSync(validated.absolutePath, flags, 0o666);
+      const fd = openSync(validated.absolutePath, flags, 0o600);
       try {
         writeSync(fd, writeContent);
       } finally {
