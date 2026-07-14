@@ -467,6 +467,37 @@ describe("HybridSearch — weight options", () => {
       })
     ).resolves.not.toThrow();
   });
+
+  it("weights vector-only and keyword-only results symmetrically", async () => {
+    const rawScore = 0.8;
+    const vectorWeight = 0.2;
+    const keywordWeight = 0.8;
+    const semanticVectorStore = {
+      isConfigured: true,
+      searchKnowledge: vi.fn().mockResolvedValue([]),
+      searchMessages: vi.fn().mockResolvedValue([
+        {
+          id: "vector-only",
+          text: "semantic match",
+          source: "chat-w",
+          score: rawScore,
+        },
+      ]),
+    };
+    search = new HybridSearch(db, false, semanticVectorStore as never);
+    insertMessage(db, "keyword-only", "chat-w", "exact keyword match");
+
+    const results = await search.searchMessages("exact keyword match", [0.1], {
+      vectorWeight,
+      keywordWeight,
+    });
+    const vectorOnly = results.find((result) => result.id === "vector-only");
+    const keywordOnly = results.find((result) => result.id === "keyword-only");
+
+    expect(vectorOnly?.score).toBeCloseTo(vectorWeight * rawScore);
+    expect(keywordOnly?.score).toBeGreaterThan(vectorOnly!.score);
+    expect(results[0].id).toBe("keyword-only");
+  });
 });
 
 // ─── HybridSearch — priority-aware retrieval ─────────────────────────────────
