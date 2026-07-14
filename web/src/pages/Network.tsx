@@ -10,6 +10,7 @@ import {
 } from "../lib/api";
 import { toast } from "../lib/toast-store";
 import { useTranslation } from "react-i18next";
+import { handleUiAction } from "../lib/handleUiAction";
 
 const TRUST_LEVELS: NetworkTrustLevel[] = ["trusted", "verified", "untrusted"];
 const AGENT_STATUSES: NetworkAgentStatus[] = ["available", "busy", "offline", "degraded"];
@@ -327,18 +328,24 @@ export function Network() {
   };
 
   const updateTrust = async (agent: NetworkAgentData, trustLevel: NetworkTrustLevel) => {
-    await api.updateNetworkAgentTrust(agent.id, { trustLevel });
-    await load();
+    await handleUiAction(async () => {
+      await api.updateNetworkAgentTrust(agent.id, { trustLevel });
+      await load();
+    }, setLastError);
   };
 
   const toggleBlocked = async (agent: NetworkAgentData) => {
-    await api.updateNetworkAgentTrust(agent.id, { blocked: !agent.blocked });
-    await load();
+    await handleUiAction(async () => {
+      await api.updateNetworkAgentTrust(agent.id, { blocked: !agent.blocked });
+      await load();
+    }, setLastError);
   };
 
   const removeAgent = async (agent: NetworkAgentData) => {
-    await api.removeNetworkAgent(agent.id);
-    await load();
+    await handleUiAction(async () => {
+      await api.removeNetworkAgent(agent.id);
+      await load();
+    }, setLastError);
   };
 
   const delegateTask = async () => {

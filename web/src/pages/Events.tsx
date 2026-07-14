@@ -6,6 +6,7 @@ import {
   WebhookRegistrationData,
 } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { handleUiAction } from "../lib/handleUiAction";
 
 function fmtTime(value: string | number | null): string {
   if (value === null) return "-";
@@ -419,7 +420,10 @@ export function Events() {
                   className="btn-ghost btn-sm"
                   onClick={() => {
                     setFilterType(type);
-                    api.eventsList({ type, limit: 100 }).then((result) => setEvents(result.data.events));
+                    void handleUiAction(async () => {
+                      const result = await api.eventsList({ type, limit: 100 });
+                      setEvents(result.data.events);
+                    }, setError);
                   }}
                 >
                   {type}
