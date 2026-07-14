@@ -11,15 +11,18 @@ export function truncateToolResult(
 
   const data = result.data as Record<string, unknown> | undefined;
   if (data?.summary || data?.message) {
-    return JSON.stringify({
-      success: result.success,
-      data: {
-        summary: data.summary || data.message,
-        _truncated: true,
-        _originalSize: resultText.length,
-        _message: "Full data truncated. Use limit parameter for smaller results.",
-      },
-    });
+    return capSerializedResult(
+      JSON.stringify({
+        success: result.success,
+        data: {
+          summary: data.summary || data.message,
+          _truncated: true,
+          _originalSize: resultText.length,
+          _message: "Full data truncated. Use limit parameter for smaller results.",
+        },
+      }),
+      maxSize
+    );
   }
 
   // Build a valid JSON summary instead of raw-slicing (which breaks JSON)
@@ -39,5 +42,20 @@ export function truncateToolResult(
       }
     }
   }
-  return JSON.stringify({ success: result.success, data: summarized });
+  return capSerializedResult(
+    JSON.stringify({ success: result.success, data: summarized }),
+    maxSize
+  );
+}
+
+function capSerializedResult(serialized: string, maxSize: number): string {
+  if (serialized.length <= maxSize) return serialized;
+  if (maxSize <= 0) return "";
+
+  const minimal = JSON.stringify({ _truncated: true });
+  if (minimal.length <= maxSize) return minimal;
+
+  // JSON strings are the only valid JSON values representable at every positive size.
+  if (maxSize === 1) return "0";
+  return `"${"x".repeat(maxSize - 2)}"`;
 }
