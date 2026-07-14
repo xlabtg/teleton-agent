@@ -10,6 +10,14 @@ export interface ProviderMeta {
   displayName: string;
 }
 
+export function mergeSavedConfigInput(
+  inputs: Record<string, string>,
+  key: string,
+  value: string
+): Record<string, string> {
+  return { ...inputs, [key]: value.trim() };
+}
+
 export function useConfigState() {
   const [status, setStatus] = useState<StatusData | null>(null);
   const [stats, setStats] = useState<MemoryStats | null>(null);
@@ -81,11 +89,13 @@ export function useConfigState() {
   );
 
   const saveConfig = async (key: string, value: string) => {
-    if (!value.trim()) return; // never send empty values
+    const savedValue = value.trim();
+    if (!savedValue) return; // never send empty values
     try {
       setError(null);
-      await api.setConfigKey(key, value.trim());
-      await loadData();
+      await api.setConfigKey(key, savedValue);
+      setServerInputs((prev) => mergeSavedConfigInput(prev, key, savedValue));
+      setLocalInputs((prev) => mergeSavedConfigInput(prev, key, savedValue));
       showSuccess('Saved');
     } catch (err) {
       setError(errMsg(err));
