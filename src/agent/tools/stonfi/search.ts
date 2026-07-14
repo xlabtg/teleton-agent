@@ -130,7 +130,7 @@ export const stonfiSearchExecutor: ToolExecutor<JettonSearchParams> = async (
         symbol: asset.symbol || "UNKNOWN",
         name: asset.display_name || "Unknown Token",
         address: asset.contract_address,
-        decimals: asset.decimals || 9,
+        decimals: asset.decimals ?? 9,
         priceUSD: asset.dex_price_usd || asset.third_party_price_usd || null,
         verified: !asset.community && !asset.blacklisted,
         image: asset.image_url || null,
