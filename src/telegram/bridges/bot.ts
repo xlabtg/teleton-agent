@@ -1,6 +1,7 @@
 import { Bot, InlineKeyboard, InputFile, type Context } from "grammy";
 import { markdownToTelegramHtml } from "../formatting.js";
 import { TELEGRAM_MAX_MESSAGE_LENGTH } from "../../constants/limits.js";
+import { splitTelegramHtml } from "../html-splitter.js";
 import type {
   ITelegramBridge,
   SentMessage,
@@ -140,32 +141,14 @@ export class GrammyBotBridge implements ITelegramBridge {
     };
   }
 
-  /** Split and send HTML that exceeds the Telegram message limit */
+  /** Split rendered HTML while keeping Telegram entities balanced in every chunk. */
   private async sendLongMessage(
     chatId: string,
     html: string,
     replyToId?: number,
     replyMarkup?: InlineKeyboard
   ): Promise<SentMessage> {
-    const chunks: string[] = [];
-    let remaining = html;
-
-    while (remaining.length > TELEGRAM_MAX_MESSAGE_LENGTH) {
-      // Find a split point: prefer double newline, then single newline, then space
-      let splitAt = remaining.lastIndexOf("\n\n", TELEGRAM_MAX_MESSAGE_LENGTH);
-      if (splitAt < TELEGRAM_MAX_MESSAGE_LENGTH * 0.3) {
-        splitAt = remaining.lastIndexOf("\n", TELEGRAM_MAX_MESSAGE_LENGTH);
-      }
-      if (splitAt < TELEGRAM_MAX_MESSAGE_LENGTH * 0.3) {
-        splitAt = remaining.lastIndexOf(" ", TELEGRAM_MAX_MESSAGE_LENGTH);
-      }
-      if (splitAt < TELEGRAM_MAX_MESSAGE_LENGTH * 0.3) {
-        splitAt = TELEGRAM_MAX_MESSAGE_LENGTH; // hard cut as last resort
-      }
-      chunks.push(remaining.slice(0, splitAt));
-      remaining = remaining.slice(splitAt).trimStart();
-    }
-    if (remaining.length > 0) chunks.push(remaining);
+    const chunks = splitTelegramHtml(html);
 
     let lastResult: SentMessage = { id: 0, date: Math.floor(Date.now() / 1000), chatId };
 
@@ -546,7 +529,7 @@ export class GrammyBotBridge implements ITelegramBridge {
         const content = await handler(this.parseMessage(gm));
         const text = content?.trim();
         if (!text || text === "__SILENT__") return;
-        const html = markdownToTelegramHtml(text).slice(0, TELEGRAM_MAX_MESSAGE_LENGTH);
+        const html = splitTelegramHtml(markdownToTelegramHtml(text))[0];
         await ctx.answerGuestQuery({
           type: "article",
           id: String(gm.message_id),
