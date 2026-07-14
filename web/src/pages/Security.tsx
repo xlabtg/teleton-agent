@@ -16,6 +16,7 @@ import {
   type SecurityValidationLogEntry,
 } from "../lib/api";
 import { useTranslation } from "react-i18next";
+import { formatApprovalParams } from "../lib/formatApprovalParams";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1017,7 +1018,7 @@ function ZeroTrustSection() {
                           fontSize: "11px",
                         }}
                       >
-                        {compactJson(JSON.parse(approval.params))}
+                        {formatApprovalParams(approval.params)}
                       </pre>
                       <button
                         onClick={() => resolveApproval(approval.id, "approve")}
