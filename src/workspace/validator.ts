@@ -289,7 +289,7 @@ export function safeWriteFileSync(validatedAbsolutePath: string, content: string
   // O_NOFOLLOW causes open() to fail with ELOOP if the path is a symlink,
   // closing the TOCTOU window between validateWritePath() and the write.
   const flags = constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW;
-  const fd = openSync(validatedAbsolutePath, flags, 0o666);
+  const fd = openSync(validatedAbsolutePath, flags, 0o600);
   try {
     writeSync(fd, content);
   } finally {
