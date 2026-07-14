@@ -53,6 +53,7 @@ const MANAGED_AGENTS_DIRNAME = "agents";
 const LOG_LINES_FALLBACK = 200;
 const STOP_GRACE_MS = 15_000;
 const MESSAGE_LINES_FALLBACK = 100;
+const MESSAGE_RETENTION_LIMIT = 1_000;
 const MESSAGE_RESULT_POLL_INTERVAL_MS = 250;
 const STARTUP_READY_TIMEOUT_MS = 120_000;
 const SECRET_KEY_FILENAME = ".secret-key";
@@ -180,6 +181,10 @@ function tailLines(text: string, lines: number): string[] {
   const normalized = text.replace(/\r\n/g, "\n").split("\n");
   if (normalized.length <= lines) return normalized;
   return normalized.slice(-lines);
+}
+
+function retainLatest<T>(items: T[], limit = MESSAGE_RETENTION_LIMIT): T[] {
+  return items.length > limit ? items.slice(-limit) : items;
 }
 
 function mergeResources(input?: Partial<ManagedAgentResourcePolicy>): ManagedAgentResourcePolicy {
@@ -1455,7 +1460,11 @@ export class ManagedAgentService {
 
   private writeMessages(definition: ManagedAgentDefinition, messages: ManagedAgentMessage[]): void {
     mkdirSync(join(definition.homePath, "messages"), { recursive: true, mode: 0o700 });
-    writeFileSync(this.messagesPath(definition), JSON.stringify(messages, null, 2), "utf-8");
+    writeFileSync(
+      this.messagesPath(definition),
+      JSON.stringify(retainLatest(messages), null, 2),
+      "utf-8"
+    );
   }
 
   private readMessageResultsFile(definition: ManagedAgentDefinition): ManagedAgentMessageResult[] {
@@ -1469,7 +1478,11 @@ export class ManagedAgentService {
     results: ManagedAgentMessageResult[]
   ): void {
     mkdirSync(join(definition.homePath, "messages"), { recursive: true, mode: 0o700 });
-    writeFileSync(this.messageResultsPath(definition), JSON.stringify(results, null, 2), "utf-8");
+    writeFileSync(
+      this.messageResultsPath(definition),
+      JSON.stringify(retainLatest(results), null, 2),
+      "utf-8"
+    );
   }
 
   private findMessageResult(messageId: string, agentId?: string): ManagedAgentMessageResult | null {
