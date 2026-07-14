@@ -89,14 +89,66 @@ describe("TxLock", () => {
 
     it("should timeout after 60 seconds", async () => {
       // Use fake timers for timeout test
+      let finish: (() => void) | undefined;
       const neverResolves = withTxLock(
-        () => new Promise<void>(() => {}) // never resolves
+        () =>
+          new Promise<void>((resolve) => {
+            finish = resolve;
+          })
       );
+      const rejection = expect(neverResolves).rejects.toThrow("TON tx-lock timeout (60s)");
 
       // Advance past the 60s timeout — async version resolves microtasks
       await vi.advanceTimersByTimeAsync(61_000);
 
-      await expect(neverResolves).rejects.toThrow("TON tx-lock timeout (60s)");
+      await rejection;
+      finish?.();
+    });
+
+    it("should keep the lock until the timed-out function settles", async () => {
+      let finishFirst: (() => void) | undefined;
+      let secondStarted = false;
+
+      const first = withTxLock(
+        () =>
+          new Promise<void>((resolve) => {
+            finishFirst = resolve;
+          })
+      );
+      const second = withTxLock(async () => {
+        secondStarted = true;
+      });
+      const rejection = expect(first).rejects.toThrow("TON tx-lock timeout (60s)");
+
+      await vi.advanceTimersByTimeAsync(60_000);
+
+      await rejection;
+      expect(secondStarted).toBe(false);
+
+      finishFirst?.();
+      await second;
+
+      expect(secondStarted).toBe(true);
+    });
+
+    it("should release the lock when a timed-out function later rejects", async () => {
+      let failFirst: ((error: Error) => void) | undefined;
+
+      const first = withTxLock(
+        () =>
+          new Promise<void>((_, reject) => {
+            failFirst = reject;
+          })
+      );
+      const second = withTxLock(async () => "next");
+      const timeout = expect(first).rejects.toThrow("TON tx-lock timeout (60s)");
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      await timeout;
+
+      failFirst?.(new Error("late failure"));
+
+      await expect(second).resolves.toBe("next");
     });
   });
 });
