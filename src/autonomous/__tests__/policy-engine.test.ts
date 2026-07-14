@@ -311,6 +311,52 @@ describe("PolicyEngine", () => {
     expect(result.violations.filter((v) => v.type === "budget_exceeded")).toHaveLength(0);
   });
 
+  it("blocks when cumulative daily TON spend would exceed the daily cap", () => {
+    const dailyEngine = new PolicyEngine({
+      ...DEFAULT_POLICY_CONFIG,
+      tonSpending: { perTask: 1, daily: 0.25, requireConfirmationAbove: 1 },
+      restrictedTools: [],
+    });
+    const task = makeTask({ constraints: { budgetTON: 1 } });
+
+    dailyEngine.setDailySpend(0.2);
+    const result = dailyEngine.checkAction(task, {
+      toolName: "ton_send",
+      params: { amount: 0.1 },
+    });
+
+    expect(result.allowed).toBe(false);
+    const violation = result.violations.find((v) => v.type === "budget_exceeded");
+    expect(violation?.message).toContain("daily");
+    expect(violation?.message).toContain("0.25");
+  });
+
+  it("distinguishes per-task and daily budget rejections", () => {
+    const dailyEngine = new PolicyEngine({
+      ...DEFAULT_POLICY_CONFIG,
+      tonSpending: { perTask: 0.1, daily: 0.5, requireConfirmationAbove: 1 },
+      restrictedTools: [],
+    });
+    const task = makeTask();
+
+    const perTaskResult = dailyEngine.checkAction(task, {
+      toolName: "ton_send",
+      params: { amount: 0.2 },
+    });
+    dailyEngine.setDailySpend(0.45);
+    const dailyResult = dailyEngine.checkAction(task, {
+      toolName: "ton_send",
+      params: { amount: 0.1 },
+    });
+
+    expect(perTaskResult.violations.find((v) => v.type === "budget_exceeded")?.message).toContain(
+      "per-task"
+    );
+    expect(dailyResult.violations.find((v) => v.type === "budget_exceeded")?.message).toContain(
+      "daily"
+    );
+  });
+
   // ─── Loop detection ────────────────────────────────────────────────────────
 
   it("detects loops when same action is repeated maxIdenticalActions times", () => {

@@ -4,7 +4,7 @@ import type {
   TaskCheckpoint,
 } from "../memory/agent/autonomous-tasks.js";
 import type { AutonomousTaskStore } from "../memory/agent/autonomous-tasks.js";
-import { PolicyEngine, DEFAULT_POLICY_CONFIG } from "./policy-engine.js";
+import { PolicyEngine, DEFAULT_POLICY_CONFIG, extractTonSpend } from "./policy-engine.js";
 import type { PolicyConfig, PolicyEngineState } from "./policy-engine.js";
 import { createLogger } from "../utils/logger.js";
 import { recordTask } from "../services/prometheus.js";
@@ -127,6 +127,10 @@ export class AutonomousLoop {
    */
   getPolicyEngine(): PolicyEngine {
     return this.policyEngine;
+  }
+
+  private syncDailySpend(): void {
+    this.policyEngine.setDailySpend(this.store.getTotalDailyTonSpend());
   }
 
   /** Request graceful stop of the loop */
@@ -315,6 +319,7 @@ export class AutonomousLoop {
         });
 
         // 2. Check policies / guardrails
+        this.syncDailySpend();
         const policyCheck = this.policyEngine.satisfiesPolicies(current, {
           toolName: action.toolName,
           params: action.params,
@@ -391,6 +396,23 @@ export class AutonomousLoop {
           message: result.success ? "Tool succeeded" : `Tool failed: ${result.error}`,
           data: { success: result.success, data: result.data, error: result.error },
         });
+
+        if (result.success) {
+          const tonSpend = extractTonSpend({
+            toolName: action.toolName,
+            params: action.params,
+            tonAmount: action.tonAmount,
+          });
+          if (tonSpend.kind === "amount") {
+            const from =
+              result.data && typeof result.data === "object" && "from" in result.data
+                ? (result.data as { from?: unknown }).from
+                : undefined;
+            const walletKey = typeof from === "string" && from.length > 0 ? from : "default";
+            this.store.recordDailyTonSpend(walletKey, tonSpend.amount);
+            this.syncDailySpend();
+          }
+        }
 
         history.push({ action, result });
         this.policyEngine.recordAction(action.toolName);

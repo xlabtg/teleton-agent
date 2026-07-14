@@ -132,7 +132,11 @@ function isNativeTonAsset(value: unknown): boolean {
   return typeof value === "string" && (value.toLowerCase() === "ton" || value === NATIVE_TON_ASSET);
 }
 
-function extractTonSpend(action: PolicyAction): TonSpend {
+function formatTon(amount: number): string {
+  return Number(amount.toFixed(9)).toString();
+}
+
+export function extractTonSpend(action: PolicyAction): TonSpend {
   const toolName = action.toolName;
   if (!toolName) return { kind: "none" };
 
@@ -177,6 +181,7 @@ export class PolicyEngine {
   private apiCallTimestamps: number[] = [];
   private consecutiveUncertainCount = 0;
   private recentActions: string[] = [];
+  private dailySpend = 0;
   private onStateChange?: (state: PolicyEngineState) => void;
 
   constructor(private config: PolicyConfig = DEFAULT_POLICY_CONFIG) {}
@@ -219,6 +224,11 @@ export class PolicyEngine {
 
   private notifyChange(): void {
     if (this.onStateChange) this.onStateChange(this.serialize());
+  }
+
+  /** Set the persisted amount already spent during the current UTC day. */
+  setDailySpend(amount: number): void {
+    this.dailySpend = isFiniteNonNegativeAmount(amount) ? amount : 0;
   }
 
   checkAction(task: AutonomousTask, action: PolicyAction): PolicyCheckResult {
@@ -304,7 +314,16 @@ export class PolicyEngine {
       if (tonSpend.amount > budgetTON) {
         violations.push({
           type: "budget_exceeded",
-          message: `TON amount ${tonSpend.amount} exceeds budget ${budgetTON}`,
+          message: `TON amount ${tonSpend.amount} exceeds budget ${budgetTON} (per-task)`,
+          requiresConfirmation: true,
+        });
+        blockingViolationCount++;
+      }
+      const projectedDailySpend = this.dailySpend + tonSpend.amount;
+      if (projectedDailySpend > this.config.tonSpending.daily) {
+        violations.push({
+          type: "budget_exceeded",
+          message: `TON daily budget exceeded: ${formatTon(this.dailySpend)} already spent + ${formatTon(tonSpend.amount)} requested = ${formatTon(projectedDailySpend)} (daily limit: ${formatTon(this.config.tonSpending.daily)})`,
           requiresConfirmation: true,
         });
         blockingViolationCount++;

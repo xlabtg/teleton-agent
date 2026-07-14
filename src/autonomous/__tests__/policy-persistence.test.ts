@@ -288,6 +288,81 @@ describe("PolicyEngine state persistence across pause/resume (issue #256)", () =
     expect(store.getPolicyState(task.id)).toBeUndefined();
   });
 
+  it("records successful TON spend and blocks a later task at the shared daily cap", async () => {
+    const policy: PolicyConfig = {
+      ...DEFAULT_POLICY_CONFIG,
+      tonSpending: { perTask: 1, daily: 0.25, requireConfirmationAbove: 1 },
+      restrictedTools: [],
+      rateLimit: { apiCallsPerMinute: 100000, toolCallsPerHour: 100000 },
+      loopDetection: { enabled: false, maxIdenticalActions: 999 },
+    };
+    const tonAction = {
+      toolName: "ton_send",
+      params: { amount: 0.2 },
+      reasoning: "Send TON",
+      confidence: 0.9,
+    } satisfies PlannedAction;
+    const firstDeps = makeDeps({
+      planNextAction: vi.fn().mockResolvedValue(tonAction),
+      executeTool: vi.fn().mockResolvedValue({
+        success: true,
+        data: { amount: 0.2, from: "EQ-wallet", txHash: "tx-1" },
+      }),
+      evaluateSuccess: vi.fn().mockResolvedValue(true),
+    });
+
+    const first = await new AutonomousLoop(store, firstDeps, policy).run(task);
+    expect(first.status).toBe("completed");
+    expect(store.getDailyTonSpend("EQ-wallet")).toBe(0.2);
+
+    const secondTask = store.createTask({
+      goal: "Second spend",
+      constraints: { maxIterations: 10 },
+    });
+    const executeSecondTool = vi.fn().mockResolvedValue({ success: true });
+    const secondDeps = makeDeps({
+      planNextAction: vi.fn().mockResolvedValue({
+        ...tonAction,
+        params: { amount: 0.1 },
+      }),
+      executeTool: executeSecondTool,
+    });
+    const second = await new AutonomousLoop(store, secondDeps, policy).run(secondTask);
+
+    expect(second.status).toBe("failed");
+    expect(second.error).toMatch(/daily/i);
+    expect(executeSecondTool).not.toHaveBeenCalled();
+  });
+
+  it("does not record failed TON executions in daily spend", async () => {
+    const policy: PolicyConfig = {
+      ...DEFAULT_POLICY_CONFIG,
+      tonSpending: { perTask: 1, daily: 1, requireConfirmationAbove: 1 },
+      restrictedTools: [],
+      rateLimit: { apiCallsPerMinute: 100000, toolCallsPerHour: 100000 },
+      loopDetection: { enabled: false, maxIdenticalActions: 999 },
+    };
+    const deps = makeDeps({
+      planNextAction: vi.fn().mockResolvedValue({
+        toolName: "ton_send",
+        params: { amount: 0.2 },
+      }),
+      executeTool: vi.fn().mockResolvedValue({ success: false, error: "not settled" }),
+      evaluateSuccess: vi.fn().mockResolvedValue(true),
+    });
+
+    await new AutonomousLoop(store, deps, policy).run(task);
+
+    expect(store.getDailyTonSpend("default")).toBe(0);
+  });
+
+  it("resets the accumulated budget on the next UTC day", () => {
+    store.recordDailyTonSpend("EQ-wallet", 0.2, new Date("2026-07-14T23:59:59Z"));
+
+    expect(store.getTotalDailyTonSpend(new Date("2026-07-14T23:59:59Z"))).toBe(0.2);
+    expect(store.getTotalDailyTonSpend(new Date("2026-07-15T00:00:00Z"))).toBe(0);
+  });
+
   it("pause preserves policy_state for the next resume", async () => {
     // Race-free pause: transition the task to 'paused' from inside the
     // evaluateSuccess hook. On the next iteration the loop sees the
