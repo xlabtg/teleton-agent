@@ -371,6 +371,83 @@ mtproto:
     expect(service.getRuntimeStatus(snapshot.id).state).toBe("starting");
   });
 
+  it("resets the restart budget after a stable uptime window", async () => {
+    let starts = 0;
+    service = new ManagedAgentService({
+      rootDir,
+      primaryConfigPath: configPath,
+      restartStabilityWindowMs: 50,
+      resolveCommand: () => ({
+        command: process.execPath,
+        args: [
+          "-e",
+          starts++ === 0
+            ? "process.exit(1)"
+            : [
+                "console.log('Teleton Agent is running!');",
+                "setTimeout(() => process.exit(0), 5000);",
+              ].join(" "),
+        ],
+      }),
+    });
+
+    const snapshot = service.createAgent({
+      name: "Recovering Bot",
+      mode: "bot",
+      botToken: "123456:ABCDEF",
+      resources: { restartBackoffMs: 0, maxRestarts: 1 },
+    });
+
+    service.startAgent(snapshot.id);
+    await expect
+      .poll(() => service?.getRuntimeStatus(snapshot.id).state, { timeout: 2_000 })
+      .toBe("running");
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(service.getRuntimeStatus(snapshot.id)).toMatchObject({
+      state: "running",
+      health: "healthy",
+      restartCount: 0,
+    });
+  });
+
+  it("preserves the restart budget when recovery crashes before becoming stable", async () => {
+    service = new ManagedAgentService({
+      rootDir,
+      primaryConfigPath: configPath,
+      restartStabilityWindowMs: 500,
+      resolveCommand: () => ({
+        command: process.execPath,
+        args: [
+          "-e",
+          [
+            "console.log('Teleton Agent is running!');",
+            "setTimeout(() => process.exit(1), 50);",
+          ].join(" "),
+        ],
+      }),
+    });
+
+    const snapshot = service.createAgent({
+      name: "Repeatedly Crashing Bot",
+      mode: "bot",
+      botToken: "123456:ABCDEF",
+      resources: { restartBackoffMs: 0, maxRestarts: 1 },
+    });
+
+    service.startAgent(snapshot.id);
+    await expect
+      .poll(() => service?.getRuntimeStatus(snapshot.id).state, { timeout: 2_000 })
+      .toBe("error");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(service.getRuntimeStatus(snapshot.id)).toMatchObject({
+      state: "error",
+      health: "error",
+      restartCount: 1,
+    });
+  });
+
   it("blocks non-isolated memory policies from starting", () => {
     service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
 

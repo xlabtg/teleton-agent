@@ -56,6 +56,7 @@ const MESSAGE_LINES_FALLBACK = 100;
 const MESSAGE_RETENTION_LIMIT = 1_000;
 const MESSAGE_RESULT_POLL_INTERVAL_MS = 250;
 const STARTUP_READY_TIMEOUT_MS = 120_000;
+const RESTART_STABILITY_WINDOW_MS = 60_000;
 const SECRET_KEY_FILENAME = ".secret-key";
 const CREDENTIALS_FILENAME = "credentials.json";
 
@@ -101,6 +102,7 @@ interface ManagedAgentProcessRecord {
   lastExitSignal: string | null;
   messageTimestamps: number[];
   startupTimer: ReturnType<typeof setTimeout> | null;
+  restartStabilityTimer: ReturnType<typeof setTimeout> | null;
 }
 
 interface EncryptedSecret {
@@ -121,6 +123,7 @@ export interface ManagedAgentServiceOptions {
   rootDir?: string;
   primaryConfigPath: string;
   resolveCommand?: (configPath: string) => ManagedAgentCommand;
+  restartStabilityWindowMs?: number;
 }
 
 function slugifyAgentId(name: string): string {
@@ -292,6 +295,7 @@ export class ManagedAgentService {
   private readonly agentsRoot: string;
   private readonly primaryConfigPath: string;
   private readonly resolveCommand: (configPath: string) => ManagedAgentCommand;
+  private readonly restartStabilityWindowMs: number;
   private readonly processes = new Map<string, ManagedAgentProcessRecord>();
 
   constructor(options: ManagedAgentServiceOptions) {
@@ -299,6 +303,10 @@ export class ManagedAgentService {
     this.agentsRoot = join(this.rootDir, MANAGED_AGENTS_DIRNAME);
     this.primaryConfigPath = options.primaryConfigPath;
     this.resolveCommand = options.resolveCommand ?? this.defaultResolveCommand;
+    this.restartStabilityWindowMs = Math.max(
+      0,
+      options.restartStabilityWindowMs ?? RESTART_STABILITY_WINDOW_MS
+    );
   }
 
   listArchetypes(): ManagedAgentArchetype[] {
@@ -572,6 +580,7 @@ export class ManagedAgentService {
         record.state = "running";
         record.startedAt = Date.now();
         this.clearStartupTimer(record);
+        this.scheduleRestartCountReset(record, logStream);
       }
     });
 
@@ -586,6 +595,7 @@ export class ManagedAgentService {
       record.startedAt = null;
       this.clearStopTimer(record);
       this.clearStartupTimer(record);
+      this.clearRestartStabilityTimer(record);
       this.closeLogStream(record);
     });
 
@@ -596,6 +606,7 @@ export class ManagedAgentService {
       record.startedAt = null;
       this.clearStopTimer(record);
       this.clearStartupTimer(record);
+      this.clearRestartStabilityTimer(record);
 
       if (expectedStop || code === 0) {
         record.state = "stopped";
@@ -1384,6 +1395,7 @@ export class ManagedAgentService {
         lastExitSignal: null,
         messageTimestamps: [],
         startupTimer: null,
+        restartStabilityTimer: null,
       };
       this.processes.set(id, record);
     }
@@ -1410,6 +1422,32 @@ export class ManagedAgentService {
     if (record.startupTimer) {
       clearTimeout(record.startupTimer);
       record.startupTimer = null;
+    }
+  }
+
+  private scheduleRestartCountReset(
+    record: ManagedAgentProcessRecord,
+    logStream: WriteStream
+  ): void {
+    this.clearRestartStabilityTimer(record);
+    if (record.restartCount === 0) return;
+
+    record.restartStabilityTimer = setTimeout(() => {
+      if (record.state !== "running" || !record.child) return;
+      record.restartCount = 0;
+      record.restartStabilityTimer = null;
+      this.appendLog(
+        logStream,
+        `[${nowIso()}] Managed agent remained stable; restart budget reset\n`
+      );
+    }, this.restartStabilityWindowMs);
+    record.restartStabilityTimer.unref();
+  }
+
+  private clearRestartStabilityTimer(record: ManagedAgentProcessRecord): void {
+    if (record.restartStabilityTimer) {
+      clearTimeout(record.restartStabilityTimer);
+      record.restartStabilityTimer = null;
     }
   }
 
