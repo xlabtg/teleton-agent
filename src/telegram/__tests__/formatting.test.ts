@@ -116,4 +116,15 @@ describe("markdownToTelegramHtml", () => {
     expect(result).toContain("&lt;item&gt;");
     expect(result).not.toContain("<item>");
   });
+
+  it.each([
+    ["code block", "$ $& $' $` $1 $$", (content: string) => `\`\`\`\n${content}\n\`\`\``],
+    ["inline code", "$ $& $' $1 $$", (content: string) => `before \`${content}\` after`],
+    ["blockquote", "$ $& $' $` $1 $$", (content: string) => `> ${content}`],
+  ])("should preserve dollar replacement patterns in %s", (_name, content, markdown) => {
+    const result = markdownToTelegramHtml(markdown(content));
+
+    expect(result).toContain(content.replaceAll("&", "&amp;"));
+    expect(result).not.toContain("\x00");
+  });
 });
