@@ -169,8 +169,12 @@ export class ToolIndex {
         }
 
         const insertTool = this.db.prepare(`
-          INSERT OR REPLACE INTO tool_index (name, description, search_text, updated_at)
+          INSERT INTO tool_index (name, description, search_text, updated_at)
           VALUES (?, ?, ?, unixepoch())
+          ON CONFLICT(name) DO UPDATE SET
+            description = excluded.description,
+            search_text = excluded.search_text,
+            updated_at = excluded.updated_at
         `);
         // vec0 virtual tables don't support OR REPLACE — delete first, then insert
         const deleteVec = this.vectorEnabled
