@@ -445,6 +445,42 @@ mtproto:
     expect(service.readMessageResult(target.id, message.id)).toEqual(recorded);
   });
 
+  it("bounds persisted inter-agent messages and results", () => {
+    service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
+
+    const sender = service.createAgent({
+      name: "Planner",
+      acknowledgePersonalAccountAccess: true,
+      messaging: { enabled: true, maxMessagesPerMinute: 2_000 },
+    });
+    const target = service.createAgent({
+      name: "Executor",
+      acknowledgePersonalAccountAccess: true,
+      messaging: { enabled: true, allowlist: [sender.id] },
+    });
+
+    const messages = [];
+    for (let index = 0; index < 1_001; index += 1) {
+      const message = service.sendMessage(sender.id, target.id, `Task ${index}`);
+      messages.push(message);
+      service.recordMessageResult(target.id, message.id, { content: "done" });
+    }
+
+    const persistedMessages = JSON.parse(
+      readFileSync(join(target.homePath, "messages", "inbox.json"), "utf-8")
+    ) as Array<{ id: string }>;
+    const persistedResults = JSON.parse(
+      readFileSync(join(target.homePath, "messages", "results.json"), "utf-8")
+    ) as Array<{ messageId: string }>;
+
+    expect(persistedMessages).toHaveLength(1_000);
+    expect(persistedResults).toHaveLength(1_000);
+    expect(persistedMessages[0]?.id).toBe(messages[1]?.id);
+    expect(persistedResults[0]?.messageId).toBe(messages[1]?.id);
+    expect(persistedMessages.at(-1)?.id).toBe(messages.at(-1)?.id);
+    expect(persistedResults.at(-1)?.messageId).toBe(messages.at(-1)?.id);
+  });
+
   it("exposes built-in archetypes and creates registry entries from them", () => {
     service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
 
