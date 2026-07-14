@@ -1495,7 +1495,7 @@ describe("Memory Schema", () => {
     });
 
     it("CURRENT_SCHEMA_VERSION is set to expected value", () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe("1.40.0");
+      expect(CURRENT_SCHEMA_VERSION).toBe("1.41.0");
     });
   });
 
@@ -1743,6 +1743,134 @@ describe("Memory Schema", () => {
 
       expect(replacedAfterMigration).toHaveLength(0);
       expect(updatedAfterMigration).toEqual([{ id: "msg1", text: "finaltoken message" }]);
+      expect(getSchemaVersion(db)).toBe(CURRENT_SCHEMA_VERSION);
+    });
+
+    it("runMigrations from version 1.40.0 repairs and rebuilds external-content FTS indexes", () => {
+      ensureSchema(db);
+      db.exec(`
+        CREATE TABLE tool_index (
+          name TEXT PRIMARY KEY,
+          description TEXT NOT NULL,
+          search_text TEXT NOT NULL,
+          updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+        );
+        CREATE VIRTUAL TABLE tool_index_fts USING fts5(
+          search_text,
+          name UNINDEXED,
+          content='tool_index',
+          content_rowid='rowid'
+        );
+        CREATE TRIGGER tool_index_fts_insert AFTER INSERT ON tool_index BEGIN
+          INSERT INTO tool_index_fts(rowid, search_text, name)
+          VALUES (new.rowid, new.search_text, new.name);
+        END;
+        CREATE TRIGGER tool_index_fts_delete AFTER DELETE ON tool_index BEGIN
+          DELETE FROM tool_index_fts WHERE rowid = old.rowid;
+        END;
+        CREATE TRIGGER tool_index_fts_update AFTER UPDATE ON tool_index BEGIN
+          DELETE FROM tool_index_fts WHERE rowid = old.rowid;
+          INSERT INTO tool_index_fts(rowid, search_text, name)
+          VALUES (new.rowid, new.search_text, new.name);
+        END;
+      `);
+      db.prepare(
+        `INSERT INTO knowledge (id, source, text, hash)
+         VALUES ('k1', 'memory', 'knowledgeoldtoken', 'hash1')`
+      ).run();
+      db.prepare(
+        `INSERT INTO tool_index (name, description, search_text)
+         VALUES ('tool1', 'Tool one', 'toololdtoken')`
+      ).run();
+
+      db.exec(`
+        DROP TRIGGER knowledge_fts_delete;
+        DROP TRIGGER knowledge_fts_update;
+        CREATE TRIGGER knowledge_fts_delete AFTER DELETE ON knowledge BEGIN
+          DELETE FROM knowledge_fts WHERE rowid = old.rowid;
+        END;
+        CREATE TRIGGER knowledge_fts_update AFTER UPDATE ON knowledge BEGIN
+          DELETE FROM knowledge_fts WHERE rowid = old.rowid;
+          INSERT INTO knowledge_fts(rowid, text, id, path, source)
+          VALUES (new.rowid, new.text, new.id, new.path, new.source);
+        END;
+      `);
+
+      db.prepare(`UPDATE knowledge SET text = 'knowledgecurrenttoken' WHERE id = 'k1'`).run();
+      db.prepare(
+        `UPDATE tool_index SET search_text = 'toolcurrenttoken' WHERE name = 'tool1'`
+      ).run();
+
+      expect(
+        db
+          .prepare(`SELECT rowid FROM knowledge_fts WHERE knowledge_fts MATCH 'knowledgeoldtoken'`)
+          .all()
+      ).toHaveLength(1);
+      expect(
+        db
+          .prepare(`SELECT rowid FROM tool_index_fts WHERE tool_index_fts MATCH 'toololdtoken'`)
+          .all()
+      ).toHaveLength(1);
+
+      setSchemaVersion(db, "1.40.0");
+      runMigrations(db);
+
+      expect(
+        db
+          .prepare(`SELECT rowid FROM knowledge_fts WHERE knowledge_fts MATCH 'knowledgeoldtoken'`)
+          .all()
+      ).toHaveLength(0);
+      expect(
+        db
+          .prepare(`SELECT rowid FROM tool_index_fts WHERE tool_index_fts MATCH 'toololdtoken'`)
+          .all()
+      ).toHaveLength(0);
+      expect(
+        db
+          .prepare(`SELECT id FROM knowledge_fts WHERE knowledge_fts MATCH 'knowledgecurrenttoken'`)
+          .all()
+      ).toEqual([{ id: "k1" }]);
+      expect(
+        db
+          .prepare(`SELECT name FROM tool_index_fts WHERE tool_index_fts MATCH 'toolcurrenttoken'`)
+          .all()
+      ).toEqual([{ name: "tool1" }]);
+
+      db.prepare(`UPDATE knowledge SET text = 'knowledgefinaltoken' WHERE id = 'k1'`).run();
+      db.prepare(`UPDATE tool_index SET search_text = 'toolfinaltoken' WHERE name = 'tool1'`).run();
+      expect(
+        db
+          .prepare(
+            `SELECT rowid FROM knowledge_fts WHERE knowledge_fts MATCH 'knowledgecurrenttoken'`
+          )
+          .all()
+      ).toHaveLength(0);
+      expect(
+        db
+          .prepare(`SELECT rowid FROM tool_index_fts WHERE tool_index_fts MATCH 'toolcurrenttoken'`)
+          .all()
+      ).toHaveLength(0);
+
+      db.prepare(`DELETE FROM knowledge WHERE id = 'k1'`).run();
+      db.prepare(`DELETE FROM tool_index WHERE name = 'tool1'`).run();
+      expect(
+        db
+          .prepare(
+            `SELECT rowid FROM knowledge_fts WHERE knowledge_fts MATCH 'knowledgefinaltoken'`
+          )
+          .all()
+      ).toHaveLength(0);
+      expect(
+        db
+          .prepare(`SELECT rowid FROM tool_index_fts WHERE tool_index_fts MATCH 'toolfinaltoken'`)
+          .all()
+      ).toHaveLength(0);
+      expect(() =>
+        db.prepare(`INSERT INTO knowledge_fts(knowledge_fts) VALUES ('integrity-check')`).run()
+      ).not.toThrow();
+      expect(() =>
+        db.prepare(`INSERT INTO tool_index_fts(tool_index_fts) VALUES ('integrity-check')`).run()
+      ).not.toThrow();
       expect(getSchemaVersion(db)).toBe(CURRENT_SCHEMA_VERSION);
     });
   });
