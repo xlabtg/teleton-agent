@@ -28,6 +28,8 @@ vi.mock("hono/streaming", () => ({
 
 import { auditTrailBus } from "../../services/audit-trail.js";
 import { notificationBus } from "../../services/notifications.js";
+import { AgentLifecycle } from "../../agent/lifecycle.js";
+import { createLifecycleSSE } from "../lifecycle-sse.js";
 import { createAuditRoutes } from "../routes/audit.js";
 import { createNotificationsRoutes } from "../routes/notifications.js";
 
@@ -94,5 +96,17 @@ describe("SSE listener cleanup", () => {
     expect(res.status).toBe(200);
     expect(streamHarness.error).toBeInstanceOf(Error);
     expect(auditTrailBus.listenerCount("event")).toBe(before);
+  });
+
+  it("removes lifecycle listeners when a heartbeat write fails", async () => {
+    const lifecycle = new AgentLifecycle();
+    const before = lifecycle.listenerCount("stateChange");
+    streamHarness.stream = createFailingHeartbeatStream();
+
+    const res = await createLifecycleSSE({} as never, lifecycle);
+
+    expect(res.status).toBe(200);
+    expect(streamHarness.error).toBeInstanceOf(Error);
+    expect(lifecycle.listenerCount("stateChange")).toBe(before);
   });
 });
