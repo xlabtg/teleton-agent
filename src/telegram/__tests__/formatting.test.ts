@@ -124,7 +124,7 @@ describe("markdownToTelegramHtml", () => {
   ])("should preserve dollar replacement patterns in %s", (_name, content, markdown) => {
     const result = markdownToTelegramHtml(markdown(content));
 
-    expect(result).toContain(content.replace("&", "&amp;"));
+    expect(result).toContain(content.replaceAll("&", "&amp;"));
     expect(result).not.toContain("\x00");
   });
 });
