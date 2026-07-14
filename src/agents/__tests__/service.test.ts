@@ -411,6 +411,43 @@ mtproto:
     });
   });
 
+  it("preserves the restart budget when recovery crashes before becoming stable", async () => {
+    service = new ManagedAgentService({
+      rootDir,
+      primaryConfigPath: configPath,
+      restartStabilityWindowMs: 500,
+      resolveCommand: () => ({
+        command: process.execPath,
+        args: [
+          "-e",
+          [
+            "console.log('Teleton Agent is running!');",
+            "setTimeout(() => process.exit(1), 50);",
+          ].join(" "),
+        ],
+      }),
+    });
+
+    const snapshot = service.createAgent({
+      name: "Repeatedly Crashing Bot",
+      mode: "bot",
+      botToken: "123456:ABCDEF",
+      resources: { restartBackoffMs: 0, maxRestarts: 1 },
+    });
+
+    service.startAgent(snapshot.id);
+    await expect
+      .poll(() => service?.getRuntimeStatus(snapshot.id).state, { timeout: 2_000 })
+      .toBe("error");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    expect(service.getRuntimeStatus(snapshot.id)).toMatchObject({
+      state: "error",
+      health: "error",
+      restartCount: 1,
+    });
+  });
+
   it("blocks non-isolated memory policies from starting", () => {
     service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
 
