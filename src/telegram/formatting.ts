@@ -94,15 +94,15 @@ export function markdownToTelegramHtml(markdown: string): string {
   );
 
   blockquotes.forEach((quote, index) => {
-    html = html.replace(`\x00BLOCKQUOTE${index}\x00`, quote);
+    html = html.replace(`\x00BLOCKQUOTE${index}\x00`, () => quote);
   });
 
   codeBlocks.forEach((block, index) => {
-    html = html.replace(`\x00CODEBLOCK${index}\x00`, block);
+    html = html.replace(`\x00CODEBLOCK${index}\x00`, () => block);
   });
 
   inlineCodes.forEach((code, index) => {
-    html = html.replace(`\x00INLINECODE${index}\x00`, code);
+    html = html.replace(`\x00INLINECODE${index}\x00`, () => code);
   });
 
   return html;
