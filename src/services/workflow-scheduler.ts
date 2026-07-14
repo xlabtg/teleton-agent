@@ -121,11 +121,15 @@ export class WorkflowScheduler {
   }
 
   private async execute(workflowId: string): Promise<void> {
-    const wf = this.store.get(workflowId);
-    if (!wf) return;
+    if (this.runningWorkflowIds.has(workflowId)) {
+      log.warn({ workflowId }, "Skipping workflow already running");
+      return;
+    }
     this.runningWorkflowIds.add(workflowId);
-    const executor = new WorkflowExecutor({ store: this.store, bridge: this.bridge });
+    const wf = this.store.get(workflowId);
     try {
+      if (!wf) return;
+      const executor = new WorkflowExecutor({ store: this.store, bridge: this.bridge });
       await executor.execute(wf);
     } catch (err) {
       log.error({ err, workflowId }, "Workflow execution failed");

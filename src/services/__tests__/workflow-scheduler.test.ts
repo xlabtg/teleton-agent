@@ -2,6 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Database from "better-sqlite3";
 import { WorkflowStore } from "../workflows.js";
 import { WorkflowScheduler } from "../workflow-scheduler.js";
+import { WorkflowExecutor } from "../workflow-executor.js";
+
+const executeWorkflow = vi.hoisted(() => vi.fn());
+
+vi.mock("../workflow-executor.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../workflow-executor.js")>();
+  return {
+    WorkflowExecutor: class extends actual.WorkflowExecutor {
+      execute = executeWorkflow;
+    },
+  };
+});
 
 vi.mock("../../utils/logger.js", () => ({
   createLogger: vi.fn(() => ({
@@ -40,6 +52,13 @@ describe("WorkflowScheduler", () => {
     db = createTestDb();
     store = new WorkflowStore(db);
     vi.useFakeTimers();
+    executeWorkflow.mockReset();
+    executeWorkflow.mockImplementation(function (
+      this: WorkflowExecutor,
+      ...args: Parameters<WorkflowExecutor["execute"]>
+    ) {
+      return WorkflowExecutor.prototype.execute.apply(this, args);
+    });
   });
 
   afterEach(() => {
@@ -95,6 +114,32 @@ describe("WorkflowScheduler", () => {
     expect(updated.runCount).toBe(0);
   });
 
+  it("does not run the same workflow concurrently across event triggers", async () => {
+    store.create({
+      name: "On start",
+      config: {
+        trigger: { type: "event", event: "agent.start" },
+        actions: [],
+      },
+    });
+    let finishExecution!: () => void;
+    executeWorkflow.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishExecution = resolve;
+        })
+    );
+
+    const scheduler = new WorkflowScheduler(db);
+    const firstRun = scheduler.fireEvent("agent.start");
+    await vi.waitFor(() => expect(executeWorkflow).toHaveBeenCalledTimes(1));
+    const overlappingRun = scheduler.fireEvent("agent.start");
+
+    await vi.waitFor(() => expect(executeWorkflow).toHaveBeenCalledTimes(1));
+    finishExecution();
+    await Promise.all([firstRun, overlappingRun]);
+  });
+
   it("handleWebhook triggers matching webhook workflows", async () => {
     const wf = store.create({
       name: "Webhook",
@@ -136,6 +181,32 @@ describe("WorkflowScheduler", () => {
     expect(updated.runCount).toBe(0);
   });
 
+  it("does not run the same workflow concurrently across webhook triggers", async () => {
+    store.create({
+      name: "Webhook",
+      config: {
+        trigger: { type: "webhook", secret: "secret123" },
+        actions: [],
+      },
+    });
+    let finishExecution!: () => void;
+    executeWorkflow.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finishExecution = resolve;
+        })
+    );
+
+    const scheduler = new WorkflowScheduler(db);
+    const firstRun = scheduler.handleWebhook("secret123");
+    await vi.waitFor(() => expect(executeWorkflow).toHaveBeenCalledTimes(1));
+    const overlappingRun = scheduler.handleWebhook("secret123");
+
+    await vi.waitFor(() => expect(executeWorkflow).toHaveBeenCalledTimes(1));
+    finishExecution();
+    await expect(Promise.all([firstRun, overlappingRun])).resolves.toEqual([true, true]);
+  });
+
   it("start and stop do not throw", () => {
     const scheduler = new WorkflowScheduler(db);
     scheduler.start();
@@ -158,6 +229,13 @@ describe("Cron matching (via tick)", () => {
     db = createTestDb();
     store = new WorkflowStore(db);
     vi.useFakeTimers();
+    executeWorkflow.mockReset();
+    executeWorkflow.mockImplementation(function (
+      this: WorkflowExecutor,
+      ...args: Parameters<WorkflowExecutor["execute"]>
+    ) {
+      return WorkflowExecutor.prototype.execute.apply(this, args);
+    });
   });
 
   afterEach(() => {
@@ -220,6 +298,13 @@ describe("WorkflowScheduler deduplication (AUDIT-M7)", () => {
     db = createTestDb();
     store = new WorkflowStore(db);
     vi.useFakeTimers();
+    executeWorkflow.mockReset();
+    executeWorkflow.mockImplementation(function (
+      this: WorkflowExecutor,
+      ...args: Parameters<WorkflowExecutor["execute"]>
+    ) {
+      return WorkflowExecutor.prototype.execute.apply(this, args);
+    });
   });
 
   afterEach(() => {
