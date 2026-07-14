@@ -553,6 +553,43 @@ export class AutonomousTaskStore {
   clearPolicyState(taskId: string): void {
     this.db.prepare(`DELETE FROM policy_state WHERE task_id = ?`).run(taskId);
   }
+
+  getDailyTonSpend(walletKey: string, now = new Date()): number {
+    const utcDate = now.toISOString().slice(0, 10);
+    const row = this.db
+      .prepare(
+        `SELECT amount FROM autonomous_daily_ton_spend WHERE wallet_key = ? AND utc_date = ?`
+      )
+      .get(walletKey, utcDate) as { amount: number } | undefined;
+    return row?.amount ?? 0;
+  }
+
+  getTotalDailyTonSpend(now = new Date()): number {
+    const utcDate = now.toISOString().slice(0, 10);
+    const row = this.db
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS amount FROM autonomous_daily_ton_spend WHERE utc_date = ?`
+      )
+      .get(utcDate) as { amount: number };
+    return row.amount;
+  }
+
+  recordDailyTonSpend(walletKey: string, amount: number, now = new Date()): number {
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error(`Daily TON spend must be a positive finite number, got ${String(amount)}`);
+    }
+    const utcDate = now.toISOString().slice(0, 10);
+    this.db
+      .prepare(
+        `INSERT INTO autonomous_daily_ton_spend (wallet_key, utc_date, amount, updated_at)
+         VALUES (?, ?, ?, unixepoch())
+         ON CONFLICT(wallet_key, utc_date) DO UPDATE SET
+           amount = autonomous_daily_ton_spend.amount + excluded.amount,
+           updated_at = excluded.updated_at`
+      )
+      .run(walletKey, utcDate, amount);
+    return this.getDailyTonSpend(walletKey, now);
+  }
 }
 
 const instances = new WeakMap<Database.Database, AutonomousTaskStore>();

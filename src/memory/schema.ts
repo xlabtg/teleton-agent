@@ -901,6 +901,16 @@ export function ensureSchema(db: Database.Database): void {
       FOREIGN KEY (task_id) REFERENCES autonomous_tasks(id) ON DELETE CASCADE
     );
 
+    -- Settled TON spend shared by all autonomous tasks. The UTC date is part
+    -- of the key so a new day starts with an empty budget without a reset job.
+    CREATE TABLE IF NOT EXISTS autonomous_daily_ton_spend (
+      wallet_key TEXT NOT NULL,
+      utc_date TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0 CHECK(amount >= 0),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      PRIMARY KEY (wallet_key, utc_date)
+    );
+
     -- =====================================================
     -- JOURNAL (Trading & Business Operations)
     -- =====================================================
@@ -1108,7 +1118,7 @@ function repairAutonomousTaskChildForeignKeys(db: Database.Database): number {
   return tablesToRepair.length;
 }
 
-export const CURRENT_SCHEMA_VERSION = "1.41.0";
+export const CURRENT_SCHEMA_VERSION = "1.42.0";
 
 export function runMigrations(db: Database.Database): void {
   const currentVersion = getSchemaVersion(db);
@@ -2486,6 +2496,25 @@ export function runMigrations(db: Database.Database): void {
       log.info("Migration 1.41.0 complete: External-content FTS indexes repaired and rebuilt");
     } catch (error) {
       log.error({ err: error }, "Migration 1.41.0 failed");
+      throw error;
+    }
+  }
+
+  if (!currentVersion || versionLessThan(currentVersion, "1.42.0")) {
+    log.info("Running migration 1.42.0: Add autonomous daily TON spend tracking");
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS autonomous_daily_ton_spend (
+          wallet_key TEXT NOT NULL,
+          utc_date TEXT NOT NULL,
+          amount REAL NOT NULL DEFAULT 0 CHECK(amount >= 0),
+          updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+          PRIMARY KEY (wallet_key, utc_date)
+        );
+      `);
+      log.info("Migration 1.42.0 complete: autonomous daily TON spend tracking created");
+    } catch (error) {
+      log.error({ err: error }, "Migration 1.42.0 failed");
       throw error;
     }
   }

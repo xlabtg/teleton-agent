@@ -1495,7 +1495,17 @@ describe("Memory Schema", () => {
     });
 
     it("CURRENT_SCHEMA_VERSION is set to expected value", () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe("1.41.0");
+      expect(CURRENT_SCHEMA_VERSION).toBe("1.42.0");
+    });
+
+    it("creates persistent autonomous daily TON spend storage", () => {
+      ensureSchema(db);
+      const table = db
+        .prepare(
+          `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'autonomous_daily_ton_spend'`
+        )
+        .get();
+      expect(table).toBeDefined();
     });
   });
 
