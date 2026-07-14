@@ -1,6 +1,14 @@
 // src/workspace/__tests__/validator.test.ts
 
-import { mkdtempSync, rmSync, writeFileSync, symlinkSync, mkdirSync, readFileSync } from "fs";
+import {
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+  symlinkSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+} from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { vi } from "vitest";
@@ -536,6 +544,18 @@ describe("Workspace Path Validator", () => {
         safeWriteFileSync(filePath, "hello safe write");
         expect(readFileSync(filePath, "utf-8")).toBe("hello safe write");
       } finally {
+        rmSync(filePath, { force: true });
+      }
+    });
+
+    it("should create files with owner-only permissions", () => {
+      const filePath = join(tempWorkspace, "private-write-test.txt");
+      const previousUmask = process.umask(0o022);
+      try {
+        safeWriteFileSync(filePath, "private content");
+        expect(statSync(filePath).mode & 0o777).toBe(0o600);
+      } finally {
+        process.umask(previousUmask);
         rmSync(filePath, { force: true });
       }
     });
