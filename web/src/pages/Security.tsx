@@ -659,14 +659,6 @@ function PolicyActionBadge({ action }: { action: "allow" | "deny" | "require_app
   );
 }
 
-function compactJson(value: unknown): string {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return "{}";
-  }
-}
-
 function policyToYaml(policy: SecurityPolicy): string {
   return JSON.stringify(
     {
