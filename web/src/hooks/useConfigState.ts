@@ -115,20 +115,20 @@ export function useConfigState() {
     setLocalInputs((prev) => ({ ...prev, [key]: value }));
   };
 
-  // Load model options when provider changes
+  // Load model options when provider changes. Never overwrite a configured
+  // model merely because it is absent from the built-in catalog.
   const currentProvider = getLocal('agent.provider');
+  const currentModel = getLocal('agent.model');
   useEffect(() => {
     if (!currentProvider) return;
     api.getModelsForProvider(currentProvider).then((res) => {
       const models = res.data.map((m) => ({ value: m.value, name: m.name }));
-      setModelOptions(models);
-      // Auto-select first model if current model isn't in the new list
-      const currentModel = localInputs['agent.model'] ?? '';
-      if (models.length > 0 && !models.some((m) => m.value === currentModel)) {
-        saveConfig('agent.model', models[0].value);
+      if (currentModel && !models.some((m) => m.value === currentModel)) {
+        models.unshift({ value: currentModel, name: `${currentModel} (Custom)` });
       }
+      setModelOptions(models);
     }).catch(() => setModelOptions([]));
-  }, [currentProvider]);
+  }, [currentProvider, currentModel]);
 
   // Handle provider change — gate on API key
   const handleProviderChange = async (newProvider: string) => {

@@ -43,7 +43,7 @@ WORKDIR /app
 # Copy package files and install production deps only
 COPY package.json package-lock.json ./
 RUN npm pkg delete scripts.prepare \
-    && npm ci --omit=dev \
+    && npm ci --omit=dev --ignore-scripts \
     && npm cache clean --force
 
 # Copy pre-built native module from build stage
