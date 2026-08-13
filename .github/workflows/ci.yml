@@ -42,15 +42,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            web/package-lock.json
+          cache-dependency-path: package-lock.json
 
+      # WebUI is a root npm workspace and is installed by the root npm ci.
       - name: Install root dependencies
         run: npm ci
-
-      - name: Install WebUI dependencies
-        run: cd web && npm ci
 
       # `vite build` transpiles via esbuild and performs NO type checking, so
       # type errors in web/src/** would otherwise escape CI entirely. Run the
