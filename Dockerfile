@@ -13,8 +13,9 @@ RUN apt-get update && apt-get install -y \
 # Copy dependency files and SDK workspace (needed for workspace resolution)
 COPY package.json package-lock.json ./
 COPY packages/sdk/package.json packages/sdk/
+COPY web/package.json web/
 
-# Install all deps (including devDependencies for build + SDK workspace)
+# Install all deps (including devDependencies for build + SDK + Web workspaces)
 RUN npm ci
 
 # Copy source, build configs, and full SDK source
@@ -22,9 +23,8 @@ COPY tsconfig.json tsup.config.ts ./
 COPY src/ src/
 COPY packages/ packages/
 
-# Copy frontend source and install its deps
+# Copy frontend source (dependencies are already installed by the root workspace npm ci)
 COPY web/ web/
-RUN cd web && npm ci
 
 # Build everything: SDK → backend (tsup) → frontend (vite)
 RUN npm run build
