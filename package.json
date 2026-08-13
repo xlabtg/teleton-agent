@@ -2,7 +2,8 @@
   "name": "teleton",
   "version": "0.8.57",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "web"
   ],
   "description": "Personal AI Agent for Telegram",
   "author": "ZKProof (https://t.me/zkproof)",
@@ -74,7 +75,7 @@
   "dependencies": {
     "@dedust/sdk": "^0.8.7",
     "@hono/node-server": "^2.0.4",
-    "@huggingface/transformers": "^3.8.1",
+    "@huggingface/transformers": "^4.2.0",
     "@inquirer/prompts": "^8.3.2",
     "@mariozechner/pi-ai": "^0.73.1",
     "@modelcontextprotocol/sdk": "^1.28.0",
@@ -177,6 +178,8 @@
     "picomatch": ">=4.0.4",
     "protobufjs": "7.6.4",
     "smol-toml": ">=1.6.1",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "sharp": "0.35.3",
+    "adm-zip": "0.6.0"
   }
 }
