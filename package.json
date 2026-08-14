@@ -104,7 +104,7 @@
     "socks-proxy-agent": "^8.0.5",
     "sqlite-vec": "^0.1.7",
     "telegram": "github:TONresistor/gramjs#fab33c2",
-    "undici": "^6.26.0",
+    "undici": "^6.28.0",
     "yaml": "^2.8.3",
     "zod": "^4.3.6"
   },
@@ -153,19 +153,19 @@
       "ws": "8.21.0"
     },
     "@mariozechner/pi-ai": {
-      "undici": "7.28.0"
+      "undici": "7.29.0"
     },
     "@redocly/respect-core": {
-      "undici": "6.27.0"
+      "undici": "6.28.0"
     },
     "@mistralai/mistralai": {
       "ws": "8.21.0"
     },
-    "axios": ">=1.16.1",
+    "axios": ">=1.18.0",
     "basic-ftp": "^6.0.1",
     "brace-expansion": ">=2.0.3",
     "esbuild": ">=0.28.1",
-    "fast-uri": "^3.1.2",
+    "fast-uri": "^3.1.5",
     "fast-xml-parser": ">=5.7.0",
     "fast-xml-builder": "^1.2.0",
     "flatted": ">=3.4.2",
@@ -180,6 +180,7 @@
     "smol-toml": ">=1.6.1",
     "vite": "^7.3.2",
     "sharp": "0.35.3",
-    "adm-zip": "0.6.0"
+    "adm-zip": "0.6.0",
+    "ip-address": "^10.5.0"
   }
 }
