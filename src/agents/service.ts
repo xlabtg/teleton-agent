@@ -9,7 +9,12 @@ import {
   readFileSync,
   rmSync,
   writeFileSync,
-} from "node:fs";
+
+  appendFileSync,
+  fstatSync,
+  openSync,
+  closeSync,
+  ftruncateSync,} from "node:fs";
 import type { WriteStream } from "node:fs";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
@@ -291,6 +296,9 @@ function normalizePersonalConnection(
 }
 
 export class ManagedAgentService {
+  private readonly messageCache = new Map<string, ManagedAgentMessage[]>();
+  private readonly messageResultCache = new Map<string, ManagedAgentMessageResult[]>();
+
   private readonly rootDir: string;
   private readonly agentsRoot: string;
   private readonly primaryConfigPath: string;
@@ -562,6 +570,10 @@ export class ManagedAgentService {
     record.lastExitSignal = null;
 
     this.appendLog(logStream, `\n[${nowIso()}] Starting managed agent "${definition.name}"\n`);
+    this.appendLog(logStream, `managed-mode=${definition.mode}\n`);
+    if (definition.mode === "bot") {
+      this.appendLog(logStream, "bot-token-env=true\n");
+    }
 
     record.startupTimer = setTimeout(() => {
       if (record.state === "starting" && record.child) {
@@ -910,11 +922,19 @@ export class ManagedAgentService {
       completedAt: nowIso(),
     };
 
-    const existing = this.readMessageResultsFile(definition).filter(
-      (item) => item.messageId !== messageId
-    );
+    let existing = this.messageResultCache.get(definition.id);
+    if (!existing) {
+      existing = this.readMessageResultsFile(definition);
+      this.messageResultCache.set(definition.id, existing);
+    }
+
+    const index = existing.findIndex((item) => item.messageId === messageId);
+    if (index >= 0) {
+      existing.splice(index, 1);
+    }
+
     existing.push(result);
-    this.writeMessageResults(definition, existing);
+    this.writeMessageResultsIncremental(definition, existing);
     return result;
   }
 
@@ -988,9 +1008,14 @@ export class ManagedAgentService {
       deliveredAt: null,
     };
 
-    const existing = this.readMessagesFile(target);
+    let existing = this.messageCache.get(target.id);
+    if (!existing) {
+      existing = this.readMessagesFile(target);
+      this.messageCache.set(target.id, existing);
+    }
+
     existing.push(message);
-    this.writeMessages(target, existing);
+    this.writeMessagesIncremental(target, existing);
     return message;
   }
 
@@ -1491,24 +1516,121 @@ export class ManagedAgentService {
   }
 
   private readMessagesFile(definition: ManagedAgentDefinition): ManagedAgentMessage[] {
+    const cached = this.messageCache.get(definition.id);
+    if (cached) return cached;
+
     const path = this.messagesPath(definition);
-    if (!existsSync(path)) return [];
-    return readJsonFile<ManagedAgentMessage[]>(path);
+    const messages = existsSync(path)
+      ? readJsonFile<ManagedAgentMessage[]>(path)
+      : [];
+
+    this.messageCache.set(definition.id, messages);
+    return messages;
   }
 
-  private writeMessages(definition: ManagedAgentDefinition, messages: ManagedAgentMessage[]): void {
-    mkdirSync(join(definition.homePath, "messages"), { recursive: true, mode: 0o700 });
+  private writeMessagesIncremental(
+    definition: ManagedAgentDefinition,
+    messages: ManagedAgentMessage[]
+  ): void {
+    const directory = join(definition.homePath, "messages");
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+
+    const path = this.messagesPath(definition);
+
+    if (messages.length === 1 && !existsSync(path)) {
+      writeFileSync(path, JSON.stringify(messages, null, 2), "utf-8");
+      return;
+    }
+
+    /*
+     * Until retention is reached, append only the new object.
+     *
+     * Existing format:
+     * [
+     *   {...}
+     * ]
+     *
+     * We remove the final ']' and append:
+     * ,
+     *   {...}
+     * ]
+     */
+    if (messages.length <= MESSAGE_RETENTION_LIMIT) {
+      const fd = openSync(path, "r+");
+
+      try {
+        const size = fstatSync(fd).size;
+
+        if (size <= 0) {
+          writeFileSync(path, JSON.stringify(messages, null, 2), "utf-8");
+          return;
+        }
+
+        ftruncateSync(fd, size - 1);
+      } finally {
+        closeSync(fd);
+      }
+
+      const item = JSON.stringify(
+        messages[messages.length - 1],
+        null,
+        2
+      );
+
+      appendFileSync(
+        path,
+        `,\n  ${item}\n]`,
+        "utf-8"
+      );
+
+      return;
+    }
+
+    /*
+     * Retention boundary:
+     * keep only the newest 1000 records and compact the file once.
+     */
+    const retained = retainLatest(messages);
+
+    messages.splice(
+      0,
+      messages.length,
+      ...retained
+    );
+
     writeFileSync(
-      this.messagesPath(definition),
-      JSON.stringify(retainLatest(messages), null, 2),
+      path,
+      JSON.stringify(messages, null, 2),
       "utf-8"
     );
   }
 
-  private readMessageResultsFile(definition: ManagedAgentDefinition): ManagedAgentMessageResult[] {
+  private writeMessages(
+    definition: ManagedAgentDefinition,
+    messages: ManagedAgentMessage[]
+  ): void {
+    mkdirSync(join(definition.homePath, "messages"), { recursive: true, mode: 0o700 });
+    writeFileSync(
+      this.messagesPath(definition),
+      JSON.stringify(messages, null, 2),
+      "utf-8"
+    );
+    this.messageCache.set(definition.id, messages);
+  }
+
+  private readMessageResultsFile(
+    definition: ManagedAgentDefinition
+  ): ManagedAgentMessageResult[] {
+    const cached = this.messageResultCache.get(definition.id);
+    if (cached) return cached;
+
     const path = this.messageResultsPath(definition);
-    if (!existsSync(path)) return [];
-    return readJsonFile<ManagedAgentMessageResult[]>(path);
+    const results = existsSync(path)
+      ? readJsonFile<ManagedAgentMessageResult[]>(path)
+      : [];
+
+    this.messageResultCache.set(definition.id, results);
+    return results;
   }
 
   private writeMessageResults(
@@ -1518,7 +1640,68 @@ export class ManagedAgentService {
     mkdirSync(join(definition.homePath, "messages"), { recursive: true, mode: 0o700 });
     writeFileSync(
       this.messageResultsPath(definition),
-      JSON.stringify(retainLatest(results), null, 2),
+      JSON.stringify(results, null, 2),
+      "utf-8"
+    );
+    this.messageResultCache.set(definition.id, results);
+  }
+
+  private writeMessageResultsIncremental(
+    definition: ManagedAgentDefinition,
+    results: ManagedAgentMessageResult[]
+  ): void {
+    const directory = join(definition.homePath, "messages");
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+
+    const path = this.messageResultsPath(definition);
+
+    if (results.length === 1 && !existsSync(path)) {
+      writeFileSync(path, JSON.stringify(results, null, 2), "utf-8");
+      return;
+    }
+
+    if (results.length <= MESSAGE_RETENTION_LIMIT) {
+      const fd = openSync(path, "r+");
+
+      try {
+        const size = fstatSync(fd).size;
+
+        if (size <= 0) {
+          writeFileSync(path, JSON.stringify(results, null, 2), "utf-8");
+          return;
+        }
+
+        ftruncateSync(fd, size - 1);
+      } finally {
+        closeSync(fd);
+      }
+
+      const item = JSON.stringify(
+        results[results.length - 1],
+        null,
+        2
+      );
+
+      appendFileSync(
+        path,
+        `,\n  ${item}\n]`,
+        "utf-8"
+      );
+
+      return;
+    }
+
+    const retained = retainLatest(results);
+
+    results.splice(
+      0,
+      results.length,
+      ...retained
+    );
+
+    writeFileSync(
+      path,
+      JSON.stringify(results, null, 2),
       "utf-8"
     );
   }

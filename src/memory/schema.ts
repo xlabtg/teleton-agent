@@ -1505,21 +1505,19 @@ export function runMigrations(db: Database.Database): void {
   }
 
   // Repair legacy/inconsistent databases where schema_version is already
-// >= 1.18.0 but the workflows table is missing.
-if (currentVersion) {
-  const workflowsExists = db
-    .prepare(
-      "SELECT 1 FROM sqlite_master WHERE type='table' AND name='workflows'"
-    )
-    .get();
+  // >= 1.18.0 but the workflows table is missing.
+  if (currentVersion) {
+    const workflowsExists = db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='workflows'")
+      .get();
 
-  if (!workflowsExists) {
-    log.warn(
-      { schemaVersion: currentVersion },
-      "Repairing inconsistent schema: workflows table is missing"
-    );
+    if (!workflowsExists) {
+      log.warn(
+        { schemaVersion: currentVersion },
+        "Repairing inconsistent schema: workflows table is missing"
+      );
 
-    db.exec(`
+      db.exec(`
       CREATE TABLE IF NOT EXISTS workflows (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -1540,11 +1538,11 @@ if (currentVersion) {
         ON workflows(created_at DESC);
     `);
 
-    log.info("Legacy schema repair complete: workflows table restored");
+      log.info("Legacy schema repair complete: workflows table restored");
+    }
   }
-}
 
-if (!currentVersion || versionLessThan(currentVersion, "1.19.0")) {
+  if (!currentVersion || versionLessThan(currentVersion, "1.19.0")) {
     log.info("Running migration 1.19.0: Add recurrence columns to tasks table");
     try {
       const addColumnIfNotExists = (table: string, column: string, type: string) => {
@@ -1770,9 +1768,7 @@ if (!currentVersion || versionLessThan(currentVersion, "1.19.0")) {
     versionLessThan(currentVersion, "1.24.0")
   ) {
     const autonomousTasksExists = db
-      .prepare(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_tasks'"
-      )
+      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='autonomous_tasks'")
       .get();
 
     if (!autonomousTasksExists) {

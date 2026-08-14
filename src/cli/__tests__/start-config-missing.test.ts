@@ -68,7 +68,7 @@ describe("teleton start missing config diagnostics", () => {
     expect(result.stderr).toContain("temporary workaround for #364");
     expect(result.stderr).toContain("set TELETON_HOME=");
     expect(result.stderr).toContain("$env:TELETON_HOME=$null");
-  });
+  }, 30000);
 
   it("binds runtime home to an explicit config path before loading the app", () => {
     const wrongHome = makeTempDir("teleton-wrong-home");

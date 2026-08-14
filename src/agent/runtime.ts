@@ -177,13 +177,34 @@ function addUsage(accumulator: UsageAccumulator, usage?: SelfCorrectionUsage): v
 }
 
 async function waitForRetryBackoff(delay: number, signal?: AbortSignal): Promise<boolean> {
-  try {
-    await sleepWithAbort(delay, signal);
-    return true;
-  } catch (error) {
-    if (signal?.aborted) return false;
-    throw error;
-  }
+  if (signal?.aborted) return false;
+  if (delay <= 0) return true;
+
+  return await new Promise<boolean>((resolve, reject) => {
+    let settled = false;
+
+    const finish = (result: boolean, error?: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", onAbort);
+
+      if (error !== undefined) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    };
+
+    const onAbort = () => finish(false);
+
+    const timer = setTimeout(() => finish(true), delay);
+    timer.unref?.();
+
+    if (signal) {
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
 }
 
 export interface ProcessMessageOptions {

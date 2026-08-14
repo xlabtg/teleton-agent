@@ -74,6 +74,80 @@ function printConfigNotFoundError(configPath: string): void {
   console.error("\n   Or use: teleton start --api (for API-only bootstrap)");
 }
 
+
+const TELETON_START_CONFIG_PREFLIGHT = true;
+
+function ensureStartConfigExists(configPath?: string): boolean {
+  if (configPath) {
+    const expanded = configPath.startsWith("~")
+      ? join(process.env.HOME || process.env.USERPROFILE || "", configPath.slice(1))
+      : configPath;
+    const absolute = resolve(expanded);
+
+    if (existsSync(absolute)) {
+      return true;
+    }
+
+    console.error("❌ Configuration not found");
+    console.error(`   Expected file: ${absolute}`);
+    console.error("");
+    console.error("   Run: teleton setup");
+    return false;
+  }
+
+  const home = process.env.TELETON_HOME;
+  const activeHome = home
+    ? resolve(home)
+    : join(process.env.HOME || process.env.USERPROFILE || "", ".teleton");
+
+  const configPathResolved = join(activeHome, "config.yaml");
+
+  if (existsSync(configPathResolved)) {
+    return true;
+  }
+
+  console.error("❌ Configuration not found");
+
+  if (home) {
+    const normalHome = join(
+      process.env.HOME || process.env.USERPROFILE || "",
+      ".teleton"
+    );
+    const normalConfigPath = join(normalHome, "config.yaml");
+
+    console.error("");
+    console.error(
+      "   A custom TELETON_HOME override is active, so Teleton is looking for config under that directory."
+    );
+    console.error(`   TELETON_HOME: ${activeHome}`);
+    console.error(`   Expected file: ${configPathResolved}`);
+    console.error(`   Normal default file: ${normalConfigPath}`);
+
+    if (existsSync(normalConfigPath)) {
+      console.error("");
+      console.error(
+        "   A config already exists in the normal default location."
+      );
+    }
+
+    console.error("");
+    console.error(
+      "   If TELETON_HOME was only set as a temporary workaround for #364, unset it and retry."
+    );
+    console.error("");
+    console.error("   To unset TELETON_HOME:");
+    console.error("   Windows cmd: set TELETON_HOME=");
+    console.error("   PowerShell: $env:TELETON_HOME=$null");
+    console.error("   macOS/Linux: unset TELETON_HOME");
+  } else {
+    console.error(`   Expected file: ${configPathResolved}`);
+    console.error("");
+    console.error("   Run: teleton setup");
+  }
+
+  return false;
+}
+
 export function bindTeletonHomeToConfig(configPath: string, argv = process.argv): void {
   const explicitConfigArg =
     argv.includes("-c") ||
@@ -199,6 +273,11 @@ program
       }
       if (options.jsonCredentials) {
         process.env.TELETON_JSON_CREDENTIALS = "true";
+      }
+
+      if (!ensureStartConfigExists(options.config)) {
+        process.exitCode = 1;
+        return;
       }
 
       const { main: startApp } = await import("../index.js");
