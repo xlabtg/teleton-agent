@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [CONTRIBUTING.md](CONTRIBUTING.md#commit-conventions)). The entries below this
 > note are preserved as the historical, manually-maintained record.
 
+## [0.8.58](https://github.com/lavatti/teleton-agent/compare/v0.8.57...v0.8.58) (2026-08-14)
+
+
+### Bug Fixes
+
+* build web workspace in Docker image ([a39d2a2](https://github.com/lavatti/teleton-agent/commit/a39d2a2a5b14fd30ada7319c37c9915f2ff5b062))
+* resolve runtime security vulnerabilities ([bafb205](https://github.com/lavatti/teleton-agent/commit/bafb2053619d546ea68348b3f2914496b0b7a384))
+* upgrade transformers and register web workspace ([cf0d56a](https://github.com/lavatti/teleton-agent/commit/cf0d56aff8f18987ea9219003c7352e952a8b650))
+
 ## [0.8.57](https://github.com/lavatti/teleton-agent/compare/v0.8.56...v0.8.57) (2026-08-12)
 
 
