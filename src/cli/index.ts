@@ -74,9 +74,6 @@ function printConfigNotFoundError(configPath: string): void {
   console.error("\n   Or use: teleton start --api (for API-only bootstrap)");
 }
 
-
-const TELETON_START_CONFIG_PREFLIGHT = true;
-
 function ensureStartConfigExists(configPath?: string): boolean {
   if (configPath) {
     const expanded = configPath.startsWith("~")
@@ -109,10 +106,7 @@ function ensureStartConfigExists(configPath?: string): boolean {
   console.error("❌ Configuration not found");
 
   if (home) {
-    const normalHome = join(
-      process.env.HOME || process.env.USERPROFILE || "",
-      ".teleton"
-    );
+    const normalHome = join(process.env.HOME || process.env.USERPROFILE || "", ".teleton");
     const normalConfigPath = join(normalHome, "config.yaml");
 
     console.error("");
@@ -125,9 +119,7 @@ function ensureStartConfigExists(configPath?: string): boolean {
 
     if (existsSync(normalConfigPath)) {
       console.error("");
-      console.error(
-        "   A config already exists in the normal default location."
-      );
+      console.error("   A config already exists in the normal default location.");
     }
 
     console.error("");

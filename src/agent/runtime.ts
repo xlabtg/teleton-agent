@@ -90,7 +90,6 @@ import {
   getModelUnavailableDiagnostic,
   trimRagContext,
   LoopStallDetector,
-  sleepWithAbort,
 } from "./runtime-utils.js";
 import { truncateToolResult } from "./tool-result-truncator.js";
 import { accumulateTokenUsage } from "./token-usage.js";
