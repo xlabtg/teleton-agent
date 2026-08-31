@@ -4,11 +4,11 @@
 
 - **Upstream:** `TONresistor/teleton-agent` (branch `main`)
 - **Fork:** `xlabtg/teleton-agent`
-- **Merge-base:** `3fd57321ffc14fbd979ce92c72184e80fa32b63d`
-- **Fork is behind upstream by:** 206 commit(s)
-- **Fork is ahead of upstream by:** 1347 commit(s)
+- **Merge-base:** `65ac1726e51fc9581d1de2fa58e089206d99390c`
+- **Fork is behind upstream by:** 117 commit(s)
+- **Fork is ahead of upstream by:** 1634 commit(s)
 
-## Conflict surface — 152 file(s) changed on both sides
+## Conflict surface — 190 file(s) changed on both sides
 
 These files changed in BOTH the fork and upstream since the merge-base and need attention during a sync. Files changed on only one side fast-forward cleanly.
 
@@ -17,50 +17,44 @@ These files changed in BOTH the fork and upstream since the merge-base and need 
 | File | Rule | Rationale |
 | --- | --- | --- |
 | `packages/sdk/src/types.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/__tests__/runtime-utils.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/client.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/runtime-utils.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/schema-sanitizer.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tool-result-truncator.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/__tests__/mcp-loader.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/__tests__/plugin-loader.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/__tests__/registry.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/__tests__/tool-index.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/deals/verify-payment.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/dedust/asset-cache.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/dedust/pools.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/dedust/token-info.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/exec/__tests__/module.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/exec/__tests__/runner.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/exec/__tests__/tools.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/exec/install.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/exec/module.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/exec/run.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/exec/service.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/mcp-loader.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/plugin-loader.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/plugin-validator.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/plugin-watcher.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/registry.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/stonfi/pools.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/stonfi/trending.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/telegram/gifts/get-my-gifts.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/media/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/telegram/media/send-voice.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/media/transcribe-audio.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/memory/memory-search.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/telegram/memory/memory-write.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/messaging/edit-message.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/telegram/messaging/schedule-message.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/messaging/send-message.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/tasks/create-scheduled-task.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/telegram/tasks/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/ton/send.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/tool-index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/types.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/web/fetch.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/agent/tools/web/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/workspace/read.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/agent/tools/workspace/rename.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/agent/tools/workspace/write.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/api/deps.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/api/middleware/auth.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/api/routes/agent.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/api/server.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/cli/commands/config.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/api/__tests__/api-server.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/cli/commands/doctor.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/cli/commands/onboard.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/cli/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/cli/prompts.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/memory/__tests__/compaction.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/__tests__/schema.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/agent/knowledge.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/agent/tasks.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
@@ -68,111 +62,155 @@ These files changed in BOTH the fork and upstream since the merge-base and need 
 | `src/memory/database.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/embeddings/cached.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/feed/messages.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/memory/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/schema.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/memory/search/context.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/memory/search/hybrid.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/memory/types/db-rows.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/session/__tests__/transcript.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/session/transcript.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/ton-proxy/__tests__/manager.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 | `src/ton-proxy/manager.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/workspace/index.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
-| `src/workspace/paths.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/workspace/__tests__/validator.test.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/workspace/manager.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
+| `src/workspace/validator.ts` | upstream-core | Core runtime / platform tracked closely against upstream |
 
-### Prefer FORK — 27 file(s)
+### Prefer FORK — 10 file(s)
 
 | File | Rule | Rationale |
 | --- | --- | --- |
-| `src/services/tts.ts` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
+| `CHANGELOG.md` | fork-changelog | CHANGELOG.md is regenerated by release-please from fork history |
 | `web/src/App.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/AgentControl.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/components/AgentSettingsPanel.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/ConfirmDialog.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/ExecSettingsPanel.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/components/Layout.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/components/Shell.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/Skeleton.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/ToolRow.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/setup/ReviewStep.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
+| `web/src/components/setup/SetupComplete.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/components/setup/SetupContext.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/components/setup/SetupLayout.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/components/setup/SetupNav.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/hooks/useTheme.ts` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/index.css` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/main.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
+| `web/src/hooks/useConfigState.ts` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 | `web/src/pages/Dashboard.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Hooks.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Mcp.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Memory.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Plugins.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Setup.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Soul.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Tasks.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Tools.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
-| `web/src/pages/Workspace.tsx` | fork-features | Fork-owned feature code (WebUI, services, Groq provider) |
 
-### Manual merge (HYBRID) — 67 file(s)
+### Manual merge (HYBRID) — 122 file(s)
 
 | File | Rule | Rationale |
 | --- | --- | --- |
-| `.github/PULL_REQUEST_TEMPLATE.md` | default | Unrecognised path — review manually before resolving |
 | `.github/workflows/ci.yml` | build-tooling | Shared build/test tooling; reconcile fork settings with upstream |
 | `.github/workflows/release.yml` | build-tooling | Shared build/test tooling; reconcile fork settings with upstream |
-| `.gitignore` | default | Unrecognised path — review manually before resolving |
+| `CONTRIBUTING.md` | default | Unrecognised path — review manually before resolving |
 | `Dockerfile` | build-tooling | Shared build/test tooling; reconcile fork settings with upstream |
+| `GETTING_STARTED.md` | default | Unrecognised path — review manually before resolving |
 | `README.md` | build-tooling | Shared build/test tooling; reconcile fork settings with upstream |
+| `TOOLS.md` | default | Unrecognised path — review manually before resolving |
 | `audit-ci.jsonc` | default | Unrecognised path — review manually before resolving |
 | `config.example.yaml` | build-tooling | Shared build/test tooling; reconcile fork settings with upstream |
+| `docs-sdk/TEMPLATE.md` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/agentic-loop.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/architecture.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/cli-reference.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/configuration.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/deploy-docker.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/index.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/installation.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/memory-system.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/plugin-sdk.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/quickstart.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-bot.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-dex.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-dns.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-errors.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-overview.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-telegram.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-ton.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/sdk-utilities.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/security.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/telegram-setup.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-deals.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-dex.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-dns.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-other.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-telegram.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tools-ton.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tutorial-dex-bot.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tutorial-inline-bot.html` | default | Unrecognised path — review manually before resolving |
+| `docs-sdk/pages/tutorial-payment-bot.html` | default | Unrecognised path — review manually before resolving |
 | `docs/configuration.md` | default | Unrecognised path — review manually before resolving |
+| `docs/deployment.md` | default | Unrecognised path — review manually before resolving |
+| `docs/plugins.md` | default | Unrecognised path — review manually before resolving |
 | `docs/telegram-setup.md` | default | Unrecognised path — review manually before resolving |
+| `docs/ton-wallet.md` | default | Unrecognised path — review manually before resolving |
+| `install.sh` | default | Unrecognised path — review manually before resolving |
+| `knip.json` | default | Unrecognised path — review manually before resolving |
 | `package-lock.json` | manifests | Dependency manifests: keep upstream bumps AND fork-only deps |
 | `package.json` | manifests | Dependency manifests: keep upstream bumps AND fork-only deps |
 | `src/agent/runtime.ts` | agent-core-hybrid | Adopt upstream concurrency/robustness but keep fork metrics/analytics hooks |
+| `src/bot/__tests__/inline-router.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/bot/index.ts` | default | Unrecognised path — review manually before resolving |
 | `src/bot/inline-router.ts` | default | Unrecognised path — review manually before resolving |
+| `src/bot/services/message-builder.ts` | default | Unrecognised path — review manually before resolving |
 | `src/bot/services/verification-poller.ts` | default | Unrecognised path — review manually before resolving |
 | `src/bot/types.ts` | default | Unrecognised path — review manually before resolving |
+| `src/config/__tests__/configurable-keys.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/config/__tests__/loader.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/config/configurable-keys.ts` | config-schema | Both sides extend the config schema/keys (e.g. Groq vs Heartbeat) |
-| `src/config/loader.ts` | default | Unrecognised path — review manually before resolving |
 | `src/config/model-catalog.ts` | default | Unrecognised path — review manually before resolving |
 | `src/config/providers.ts` | default | Unrecognised path — review manually before resolving |
 | `src/config/schema.ts` | config-schema | Both sides extend the config schema/keys (e.g. Groq vs Heartbeat) |
 | `src/constants/limits.ts` | default | Unrecognised path — review manually before resolving |
-| `src/constants/timeouts.ts` | default | Unrecognised path — review manually before resolving |
+| `src/deals/db.ts` | default | Unrecognised path — review manually before resolving |
 | `src/deals/executor.ts` | default | Unrecognised path — review manually before resolving |
+| `src/deals/gift-detector.ts` | default | Unrecognised path — review manually before resolving |
 | `src/deals/module.ts` | default | Unrecognised path — review manually before resolving |
+| `src/deals/types.ts` | default | Unrecognised path — review manually before resolving |
 | `src/index.ts` | default | Unrecognised path — review manually before resolving |
-| `src/providers/__tests__/claude-code-retry.test.ts` | default | Unrecognised path — review manually before resolving |
-| `src/sdk/__tests__/bot.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/plugin-orchestrator.ts` | default | Unrecognised path — review manually before resolving |
+| `src/providers/model-resolver.ts` | default | Unrecognised path — review manually before resolving |
+| `src/scheduled-tasks.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/__tests__/safe-db.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/sdk/__tests__/telegram-messages.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/__tests__/ton.test.ts` | default | Unrecognised path — review manually before resolving |
-| `src/sdk/bot.ts` | default | Unrecognised path — review manually before resolving |
+| `src/sdk/formatting.ts` | default | Unrecognised path — review manually before resolving |
+| `src/sdk/hooks/__tests__/runner.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/hooks/runner.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/index.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/telegram-messages.ts` | default | Unrecognised path — review manually before resolving |
+| `src/sdk/telegram-social.ts` | default | Unrecognised path — review manually before resolving |
 | `src/sdk/ton.ts` | default | Unrecognised path — review manually before resolving |
 | `src/soul/__tests__/loader.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/soul/loader.ts` | default | Unrecognised path — review manually before resolving |
+| `src/startup-maintenance.ts` | default | Unrecognised path — review manually before resolving |
+| `src/telegram/__tests__/formatting.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/__tests__/handlers.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/telegram/__tests__/task-executor.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/admin.ts` | default | Unrecognised path — review manually before resolving |
+| `src/telegram/bridge-interface.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/bridge.ts` | default | Unrecognised path — review manually before resolving |
+| `src/telegram/bridges/bot.ts` | default | Unrecognised path — review manually before resolving |
+| `src/telegram/bridges/user.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/client.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/handlers.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/task-dependency-resolver.ts` | default | Unrecognised path — review manually before resolving |
 | `src/telegram/task-executor.ts` | default | Unrecognised path — review manually before resolving |
-| `src/ton/__tests__/transfer.test.ts` | default | Unrecognised path — review manually before resolving |
-| `src/ton/transfer.ts` | default | Unrecognised path — review manually before resolving |
-| `src/utils/logger.ts` | default | Unrecognised path — review manually before resolving |
+| `src/ton/__tests__/tx-lock.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/ton/tx-lock.ts` | default | Unrecognised path — review manually before resolving |
+| `src/ton/wallet-service.ts` | default | Unrecognised path — review manually before resolving |
 | `src/utils/module-db.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/__tests__/agent-sse.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/__tests__/config-side-effects.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/__tests__/setup-auth-fragment.test.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/__tests__/setup-routes.test.ts` | default | Unrecognised path — review manually before resolving |
-| `src/webui/__tests__/workspace-raw.test.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/lifecycle-sse.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/config.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/hooks.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/marketplace.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/routes/mcp.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/routes/memory.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/setup.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/routes/soul.ts` | default | Unrecognised path — review manually before resolving |
+| `src/webui/routes/tasks.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/tools.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/routes/workspace.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/server.ts` | webui-server | Both sides register WebUI routes; keep both route mounts |
 | `src/webui/services/marketplace.ts` | default | Unrecognised path — review manually before resolving |
-| `src/webui/setup-auth.ts` | default | Unrecognised path — review manually before resolving |
-| `src/webui/setup-server.ts` | default | Unrecognised path — review manually before resolving |
 | `src/webui/types.ts` | default | Unrecognised path — review manually before resolving |
 | `web/package-lock.json` | manifests | Dependency manifests: keep upstream bumps AND fork-only deps |
 | `web/package.json` | manifests | Dependency manifests: keep upstream bumps AND fork-only deps |
