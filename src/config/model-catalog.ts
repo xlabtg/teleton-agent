@@ -490,97 +490,24 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
   ],
   nvidia: [
     {
-      value: "z-ai/glm-5.1",
-      name: "GLM-5.1",
+      value: "z-ai/glm-5-3",
+      name: "GLM-5.3",
       description: "NVIDIA hosted agentic chat model with native tool calling",
     },
     {
-      value: "minimaxai/minimax-m2.7",
-      name: "MiniMax M2.7",
-      description: "Current NVIDIA preview coding model",
+      value: "z-ai/glm-5-3-flash",
+      name: "GLM-5.3-flash",
+      description: "NVIDIA hosted agentic chat model with native tool calling",
     },
     {
-      value: "openai/gpt-oss-20b",
-      name: "GPT OSS 20B Overview",
-      description:
-        "OpenAI releases the gpt-oss family of open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases",
-    },
-    {
-      value: "openai/gpt-oss-120b",
-      name: "GPT OSS 120B Overview",
-      description:
-        "OpenAI releases the gpt-oss family of open-weight models designed for powerful reasoning, agentic tasks, and versatile developer use cases",
-    },
-    {
-      value: "meta/llama-3.1-8b-instruct",
-      name: "Llama 3.1 8B Instruct",
-      description: "128K ctx, chat + tools + vision, FREE preview",
-    },
-    {
-      value: "meta/llama-3.1-70b-instruct",
-      name: "Llama 3.1 70B Instruct",
-      description: "128K ctx, chat + tools, FREE preview",
-    },
-    {
-      value: "meta/llama-3.2-90b-vision-instruct",
-      name: "Llama 3.2 90B Vision Instruct",
-      description: "128K ctx, large multimodal vision + chat, FREE preview",
-    },
-    {
-      value: "meta/llama-3.3-70b-instruct",
-      name: "Llama 3.3 70B Instruct",
-      description: "128K ctx, updated general-purpose instruct, FREE preview",
-    },
-    {
-      value: "qwen/qwen3-next-80b-a3b-instruct",
-      name: "Qwen3 Next 80B",
-      description: "Large MoE chat model, FREE preview",
-    },
-    {
-      value: "qwen/qwen3-coder-480b-a35b-instruct",
-      name: "Qwen3 Coder 480B",
-      description: "Current NVIDIA preview coding model",
-    },
-    {
-      value: "qwen/qwen3.5-122b-a10b",
-      name: "Qwen3.5-122B-A10B",
-      description: "Current NVIDIA preview coding model",
-    },
-    {
-      value: "qwen/qwen3.5-397b-a17b",
-      name: "Qwen3.5-397B-A17B",
-      description: "Current NVIDIA preview coding model",
-    },
-    {
-      value: "mistralai/mistral-small-4-119b-2603",
-      name: "Mistral Small 4 119B A6B",
-      description:
-        "Mistral Small 4 is a powerful hybrid model capable of acting as both a general instruction model and a reasoning model. It unifies the capabilities of three different model families—Instruct, Reasoning (previously called Magistral), and Devstral—into a single, unified model",
-    },
-    {
-      value: "deepseek-ai/deepseek-v3.1-terminus",
-      name: "DeepSeek V3.1 Terminus",
+      value: "deepseek-ai/deepseek-v4.1-flash",
+      name: "DeepSeek v4.1 Flesh",
       description: "Current NVIDIA preview reasoning/chat model",
     },
     {
-      value: "deepseek-ai/deepseek-v4-flash",
-      name: "DeepSeek V4 Flesh",
-      description: "Current NVIDIA preview reasoning/chat model",
-    },
-    {
-      value: "moonshotai/kimi-k2.6",
-      name: "Kimi-K2.6",
+      value: "moonshotai/kimi-k3",
+      name: "Kimi-K3",
       description: "Current NVIDIA preview instruct model",
-    },
-    {
-      value: "stepfun-ai/step-3.7-flash",
-      name: "Step 3.7 Flash",
-      description: "Current NVIDIA preview fast chat model",
-    },
-    {
-      value: "stepfun-ai/step-3.5-flash",
-      name: "Step 3.5 Flash",
-      description: "Current NVIDIA preview fast chat model",
     },
   ],
   gocoon: [
