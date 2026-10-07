@@ -10,7 +10,7 @@ agent:
   provider: anthropic
 telegram:
   api_id: 12345
-  api_hash: abcdef1234567890
+  api_hash: placeholder-hash
   phone: "+1234567890"
 `;
 
