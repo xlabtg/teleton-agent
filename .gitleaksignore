@@ -1,0 +1,2 @@
+# Фиктивный api_hash в репро-скрипте аудита V8 (#738), заменён в следующем коммите
+33f6971ebeafcfbabf02e64152ee923a2ed5500f:experiments/audit8/repro-agent-1.test.ts:generic-api-key:13
