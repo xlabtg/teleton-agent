@@ -6,7 +6,7 @@ audit-source: "#738"
 finding-id: "WORK8-015"
 severity: "medium"
 category: "data-integrity"
-github-issue: "TBD"
+github-issue: "https://github.com/xlabtg/teleton-agent/issues/754"
 ---
 
 ## Problem Description

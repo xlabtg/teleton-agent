@@ -6,7 +6,7 @@ audit-source: "#738"
 finding-id: "WORK8-027"
 severity: "low"
 category: "repo-hygiene"
-github-issue: "TBD"
+github-issue: "https://github.com/xlabtg/teleton-agent/issues/766"
 ---
 
 ## Problem Description

@@ -6,7 +6,7 @@ audit-source: "#738"
 finding-id: "WORK8-009"
 severity: "medium"
 category: "financial-safety"
-github-issue: "TBD"
+github-issue: "https://github.com/xlabtg/teleton-agent/issues/748"
 ---
 
 ## Problem Description
