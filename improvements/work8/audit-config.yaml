@@ -1,6 +1,6 @@
 audit:
   source_issue: "https://github.com/xlabtg/teleton-agent/issues/738"
-  prepared_pr: "TBD"
+  prepared_pr: "https://github.com/xlabtg/teleton-agent/pull/739"
   branch: "issue-738-eab8d3882c28"
   executed_at: "2026-10-07T00:00:00Z"
   model: "Claude Opus 5.5 (Claude Code)"
@@ -63,7 +63,7 @@ output:
   report: "improvements/work8/AUDIT_V8_REPORT.md"
   issues_dir: "improvements/work8/issues"
   validation_dir: "improvements/work8/validation"
-  filed_issues: "TBD"
+  filed_issues: "#740-#766"
 findings:
   total: 27
   high: 8

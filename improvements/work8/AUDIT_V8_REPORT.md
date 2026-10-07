@@ -75,33 +75,33 @@ docker compose, гигиена репозитория). Каждая наход�
 
 | ID | Заголовок | Серьёзность | Категория | Issue |
 | -- | --------- | ----------- | --------- | ----- |
-| [WORK8-001](issues/WORK8-001-gift-msgid-reuse-multiple-payouts.md) | Один подарок подтверждает любое число сделок — повторные выплаты | high | financial-safety | TBD |
-| [WORK8-002](issues/WORK8-002-setup-server-csrf-dns-rebinding-wallet-overwrite.md) | Setup-сервер принимает cross-site / DNS-rebinding запросы, перезаписывающие кошелёк и конфиг владельца | high | security | TBD |
-| [WORK8-003](issues/WORK8-003-inbound-webhook-signature-reflection-replay.md) | Подпись входящих вебхуков совпадает с исходящим HMAC: отражение, replay и инъекция событий | high | security | TBD |
-| [WORK8-004](issues/WORK8-004-download-binary-ssrf-ipv6-redirect-bypass.md) | SSRF-защита web_download_binary обходится IPv6-литералами и редиректами | high | security | TBD |
-| [WORK8-005](issues/WORK8-005-managed-agent-edit-leaks-parent-env-secrets.md) | Редактирование managed-агента записывает секреты родителя из env в config.yaml дочернего агента | high | security | TBD |
-| [WORK8-006](issues/WORK8-006-ci-pull-request-target-pwn-request.md) | CI выполняет код fork-PR под pull_request_target с доступом к VERCEL_TOKEN / CODECOV_TOKEN | high | security | TBD |
-| [WORK8-007](issues/WORK8-007-backup-restore-stale-wal-shm-sidecars.md) | Восстановление бэкапа оставляет устаревшие -wal/-shm, и SQLite накатывает старые WAL-кадры | high | data-integrity | TBD |
-| [WORK8-008](issues/WORK8-008-punctuation-prefixed-messages-dropped-as-commands.md) | Обычные сообщения, начинающиеся с `.`, `!` или `/`, считаются админ-командами и молча отбрасываются | high | correctness | TBD |
-| [WORK8-009](issues/WORK8-009-to-units-tofixed-precision-loss.md) | toUnits() на Number.toFixed даёт неверные on-chain суммы и падает на больших значениях | medium | financial-safety | TBD |
-| [WORK8-010](issues/WORK8-010-ton-confirm-window-shorter-than-valid-until.md) | Окно подтверждения TON (20 с) короче срока валидности сообщения (~60 с) — риск двойной выплаты | medium | financial-safety | TBD |
-| [WORK8-011](issues/WORK8-011-non-admin-admin-task-boot-prompts.md) | Не-админы могут запускать промпты `[ADMIN TASK]` и `/boot` при открытом доступе к командам | medium | security | TBD |
-| [WORK8-012](issues/WORK8-012-compose-webui-published-all-interfaces.md) | compose.yaml публикует WebUI на всех интерфейсах хоста по умолчанию | medium | security | TBD |
-| [WORK8-013](issues/WORK8-013-install-sh-upstream-repo-not-fork.md) | install.sh устанавливает upstream-репозиторий TONresistor вместо форка и отвергает клоны форка | medium | supply-chain | TBD |
-| [WORK8-014](issues/WORK8-014-nvidia-catalog-missing-default-model.md) | Каталог моделей NVIDIA не содержит модель по умолчанию `z-ai/glm-5.1` (дрейф после fd9ac870) | medium | correctness | TBD |
-| [WORK8-015](issues/WORK8-015-audit-trail-prune-breaks-verify-integrity.md) | AuditTrailService.pruneBefore ломает verifyIntegrity — ложная тревога о подделке | medium | data-integrity | TBD |
-| [WORK8-016](issues/WORK8-016-webhook-retries-lost-on-restart.md) | Повторы доставки вебхуков теряются при перезапуске (строки навсегда в `retrying`) | medium | reliability | TBD |
-| [WORK8-017](issues/WORK8-017-marketplace-update-uninstalls-before-install.md) | Marketplace updatePlugin сначала удаляет плагин; неудачная загрузка оставляет систему без плагина | medium | reliability | TBD |
-| [WORK8-018](issues/WORK8-018-pipeline-primary-step-no-tool-context.md) | Primary-шаги pipeline запускают агента без toolContext — вызовы инструментов теряются, шаг «completed» | medium | correctness | TBD |
-| [WORK8-019](issues/WORK8-019-registry-tool-timeout-abandons-exec.md) | Жёсткий 90-секундный таймаут реестра бросает exec-команды, которые ещё выполняются | medium | reliability | TBD |
-| [WORK8-020](issues/WORK8-020-ton-proxy-kills-foreign-process-on-port.md) | Старт TON Proxy посылает SIGTERM любому процессу на порту (по умолчанию 8080) и устаревшему PID | medium | reliability | TBD |
-| [WORK8-021](issues/WORK8-021-group-command-at-botname-not-recognised.md) | Групповые команды вида `/cmd@botname` не распознаются | medium | correctness | TBD |
-| [WORK8-022](issues/WORK8-022-nested-flood-retry-multiplies-attempts.md) | Вложенный withFloodRetry в user-mode sendMessage умножает число попыток (9 вместо 3) | medium | reliability | TBD |
-| [WORK8-023](issues/WORK8-023-payment-verifier-scans-only-20-transactions.md) | Проверка оплаты просматривает только 20 последних транзакций — спам скрывает реальный платёж | low | reliability | TBD |
-| [WORK8-024](issues/WORK8-024-reset-session-keeps-token-counters.md) | resetSession сохраняет счётчики токенов старой сессии | low | correctness | TBD |
-| [WORK8-025](issues/WORK8-025-bot-mentions-me-other-bot-commands.md) | mentionsMe в bot-режиме срабатывает на команды другим ботам и на похожие username | low | correctness | TBD |
-| [WORK8-026](issues/WORK8-026-message-splitter-breaks-surrogate-pairs.md) | splitMessageForTelegram при жёстком разрезе разбивает суррогатные пары UTF-16 | low | correctness | TBD |
-| [WORK8-027](issues/WORK8-027-tracked-scratch-artifacts-repo-root.md) | В корне репозитория отслеживаются временные артефакты автоматизации, включая деструктивный скрипт auto-commit/push | low | repo-hygiene | TBD |
+| [WORK8-001](issues/WORK8-001-gift-msgid-reuse-multiple-payouts.md) | Один подарок подтверждает любое число сделок — повторные выплаты | high | financial-safety | [#740](https://github.com/xlabtg/teleton-agent/issues/740) |
+| [WORK8-002](issues/WORK8-002-setup-server-csrf-dns-rebinding-wallet-overwrite.md) | Setup-сервер принимает cross-site / DNS-rebinding запросы, перезаписывающие кошелёк и конфиг владельца | high | security | [#741](https://github.com/xlabtg/teleton-agent/issues/741) |
+| [WORK8-003](issues/WORK8-003-inbound-webhook-signature-reflection-replay.md) | Подпись входящих вебхуков совпадает с исходящим HMAC: отражение, replay и инъекция событий | high | security | [#742](https://github.com/xlabtg/teleton-agent/issues/742) |
+| [WORK8-004](issues/WORK8-004-download-binary-ssrf-ipv6-redirect-bypass.md) | SSRF-защита web_download_binary обходится IPv6-литералами и редиректами | high | security | [#743](https://github.com/xlabtg/teleton-agent/issues/743) |
+| [WORK8-005](issues/WORK8-005-managed-agent-edit-leaks-parent-env-secrets.md) | Редактирование managed-агента записывает секреты родителя из env в config.yaml дочернего агента | high | security | [#744](https://github.com/xlabtg/teleton-agent/issues/744) |
+| [WORK8-006](issues/WORK8-006-ci-pull-request-target-pwn-request.md) | CI выполняет код fork-PR под pull_request_target с доступом к VERCEL_TOKEN / CODECOV_TOKEN | high | security | [#745](https://github.com/xlabtg/teleton-agent/issues/745) |
+| [WORK8-007](issues/WORK8-007-backup-restore-stale-wal-shm-sidecars.md) | Восстановление бэкапа оставляет устаревшие -wal/-shm, и SQLite накатывает старые WAL-кадры | high | data-integrity | [#746](https://github.com/xlabtg/teleton-agent/issues/746) |
+| [WORK8-008](issues/WORK8-008-punctuation-prefixed-messages-dropped-as-commands.md) | Обычные сообщения, начинающиеся с `.`, `!` или `/`, считаются админ-командами и молча отбрасываются | high | correctness | [#747](https://github.com/xlabtg/teleton-agent/issues/747) |
+| [WORK8-009](issues/WORK8-009-to-units-tofixed-precision-loss.md) | toUnits() на Number.toFixed даёт неверные on-chain суммы и падает на больших значениях | medium | financial-safety | [#748](https://github.com/xlabtg/teleton-agent/issues/748) |
+| [WORK8-010](issues/WORK8-010-ton-confirm-window-shorter-than-valid-until.md) | Окно подтверждения TON (20 с) короче срока валидности сообщения (~60 с) — риск двойной выплаты | medium | financial-safety | [#749](https://github.com/xlabtg/teleton-agent/issues/749) |
+| [WORK8-011](issues/WORK8-011-non-admin-admin-task-boot-prompts.md) | Не-админы могут запускать промпты `[ADMIN TASK]` и `/boot` при открытом доступе к командам | medium | security | [#750](https://github.com/xlabtg/teleton-agent/issues/750) |
+| [WORK8-012](issues/WORK8-012-compose-webui-published-all-interfaces.md) | compose.yaml публикует WebUI на всех интерфейсах хоста по умолчанию | medium | security | [#751](https://github.com/xlabtg/teleton-agent/issues/751) |
+| [WORK8-013](issues/WORK8-013-install-sh-upstream-repo-not-fork.md) | install.sh устанавливает upstream-репозиторий TONresistor вместо форка и отвергает клоны форка | medium | supply-chain | [#752](https://github.com/xlabtg/teleton-agent/issues/752) |
+| [WORK8-014](issues/WORK8-014-nvidia-catalog-missing-default-model.md) | Каталог моделей NVIDIA не содержит модель по умолчанию `z-ai/glm-5.1` (дрейф после fd9ac870) | medium | correctness | [#753](https://github.com/xlabtg/teleton-agent/issues/753) |
+| [WORK8-015](issues/WORK8-015-audit-trail-prune-breaks-verify-integrity.md) | AuditTrailService.pruneBefore ломает verifyIntegrity — ложная тревога о подделке | medium | data-integrity | [#754](https://github.com/xlabtg/teleton-agent/issues/754) |
+| [WORK8-016](issues/WORK8-016-webhook-retries-lost-on-restart.md) | Повторы доставки вебхуков теряются при перезапуске (строки навсегда в `retrying`) | medium | reliability | [#755](https://github.com/xlabtg/teleton-agent/issues/755) |
+| [WORK8-017](issues/WORK8-017-marketplace-update-uninstalls-before-install.md) | Marketplace updatePlugin сначала удаляет плагин; неудачная загрузка оставляет систему без плагина | medium | reliability | [#756](https://github.com/xlabtg/teleton-agent/issues/756) |
+| [WORK8-018](issues/WORK8-018-pipeline-primary-step-no-tool-context.md) | Primary-шаги pipeline запускают агента без toolContext — вызовы инструментов теряются, шаг «completed» | medium | correctness | [#757](https://github.com/xlabtg/teleton-agent/issues/757) |
+| [WORK8-019](issues/WORK8-019-registry-tool-timeout-abandons-exec.md) | Жёсткий 90-секундный таймаут реестра бросает exec-команды, которые ещё выполняются | medium | reliability | [#758](https://github.com/xlabtg/teleton-agent/issues/758) |
+| [WORK8-020](issues/WORK8-020-ton-proxy-kills-foreign-process-on-port.md) | Старт TON Proxy посылает SIGTERM любому процессу на порту (по умолчанию 8080) и устаревшему PID | medium | reliability | [#759](https://github.com/xlabtg/teleton-agent/issues/759) |
+| [WORK8-021](issues/WORK8-021-group-command-at-botname-not-recognised.md) | Групповые команды вида `/cmd@botname` не распознаются | medium | correctness | [#760](https://github.com/xlabtg/teleton-agent/issues/760) |
+| [WORK8-022](issues/WORK8-022-nested-flood-retry-multiplies-attempts.md) | Вложенный withFloodRetry в user-mode sendMessage умножает число попыток (9 вместо 3) | medium | reliability | [#761](https://github.com/xlabtg/teleton-agent/issues/761) |
+| [WORK8-023](issues/WORK8-023-payment-verifier-scans-only-20-transactions.md) | Проверка оплаты просматривает только 20 последних транзакций — спам скрывает реальный платёж | low | reliability | [#762](https://github.com/xlabtg/teleton-agent/issues/762) |
+| [WORK8-024](issues/WORK8-024-reset-session-keeps-token-counters.md) | resetSession сохраняет счётчики токенов старой сессии | low | correctness | [#763](https://github.com/xlabtg/teleton-agent/issues/763) |
+| [WORK8-025](issues/WORK8-025-bot-mentions-me-other-bot-commands.md) | mentionsMe в bot-режиме срабатывает на команды другим ботам и на похожие username | low | correctness | [#764](https://github.com/xlabtg/teleton-agent/issues/764) |
+| [WORK8-026](issues/WORK8-026-message-splitter-breaks-surrogate-pairs.md) | splitMessageForTelegram при жёстком разрезе разбивает суррогатные пары UTF-16 | low | correctness | [#765](https://github.com/xlabtg/teleton-agent/issues/765) |
+| [WORK8-027](issues/WORK8-027-tracked-scratch-artifacts-repo-root.md) | В корне репозитория отслеживаются временные артефакты автоматизации, включая деструктивный скрипт auto-commit/push | low | repo-hygiene | [#766](https://github.com/xlabtg/teleton-agent/issues/766) |
 
 ## 4. Подробности находок
 
@@ -337,6 +337,8 @@ WORK8-023, WORK8-024, WORK8-025, WORK8-026, WORK8-027.
 
 ## 6. Заметка о заведении задач
 
-Шаблоны задач находятся в `improvements/work8/issues/`; поле `github-issue` равно
-`TBD` до заведения задач на GitHub. Структуру артефактов проверяет
+Все 27 находок заведены отдельными issue **[AUDIT/V8]** — **#740–#766** — скриптом
+`validation/file-issues.mjs`; ссылки проставлены в поле `github-issue` каждого шаблона
+и в индексе выше. Аккаунт автоматизации не имеет прав triage, поэтому
+рекомендуемые метки и milestone указаны в подвале каждого issue. Структуру артефактов проверяет
 `node improvements/work8/validation/check-artifacts.mjs`.
