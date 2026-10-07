@@ -5,6 +5,9 @@
   "high": true,
   "allowlist": [
     "GHSA-5rq4-664w-9x2c",
-    "GHSA-m7jm-9gc2-mpf2"
+    "GHSA-m7jm-9gc2-mpf2",
+    // braces <=3.0.3 stack-exhaustion DoS: no patched release exists; the only
+    // remaining path is the dev-only `jscpd` (dupcheck) which globs local src/.
+    "GHSA-vfj7-8cjw-p6xm"
   ]
 }
