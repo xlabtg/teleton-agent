@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import { fromNano } from "@ton/ton";
 import { Address, type Cell } from "@ton/core";
 import { getCachedTonClient } from "./wallet-service.js";
-import { withBlockchainRetry } from "../utils/retry.js";
+import { readTransactionHistory } from "./transaction-history.js";
 import { PAYMENT_TOLERANCE_RATIO } from "../constants/limits.js";
 import { getErrorMessage } from "../utils/errors.js";
 import { createLogger } from "../utils/logger.js";
@@ -74,9 +74,10 @@ export async function verifyPayment(
     const client = await getCachedTonClient();
     const botAddress = Address.parse(botWalletAddress);
 
-    const transactions = await withBlockchainRetry(
-      () => client.getTransactions(botAddress, { limit: 20 }),
-      "getTransactions"
+    const transactions = await readTransactionHistory(
+      client,
+      botAddress,
+      Math.max(requestTime, Date.now() - maxPaymentAgeMinutes * 60_000)
     );
 
     for (const tx of transactions) {

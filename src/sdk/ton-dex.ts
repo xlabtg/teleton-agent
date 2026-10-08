@@ -11,7 +11,7 @@ import { PluginSDKError } from "@teleton-agent/sdk";
 import { WalletContractV5R1, toNano, internal } from "@ton/ton";
 import { Address } from "@ton/core";
 import { getCachedTonClient, loadWallet, getKeyPair } from "../ton/wallet-service.js";
-import { sendWalletTx, walletTxLt, confirmWalletTx } from "../ton/confirm.js";
+import { sendWalletTx, createWalletMessageCollector } from "../ton/confirm.js";
 import { StonApiClient } from "@ston-fi/api";
 import { dexFactory } from "@ston-fi/sdk";
 import { Factory, Asset, PoolType, ReadinessStatus, JettonRoot, VaultJetton } from "@dedust/sdk";
@@ -323,45 +323,41 @@ async function executeDedustSwap(
   const minAmountOut = amountOut - (amountOut * BigInt(Math.floor(slippage * 10000))) / 10000n;
 
   return withSwapWallet(tonClient, async ({ keyPair, walletContract }) => {
-    const sender = walletContract.sender(keyPair.secretKey);
-    const sinceLt = await walletTxLt(tonClient, walletContract.address);
-    let broadcastError: unknown;
+    const { sender, messages } = createWalletMessageCollector(walletContract.address);
 
-    try {
-      if (isTonInput) {
-        const tonVault = tonClient.open(await factory.getNativeVault());
-        await tonVault.sendSwap(sender, {
-          poolAddress: pool.address,
-          amount: amountIn,
-          limit: minAmountOut,
-          gasAmount: toNano(DEDUST_GAS.SWAP_TON_TO_JETTON),
-        });
-      } else {
-        const jettonAddress = Address.parse(fromAsset);
-        const jettonVault = tonClient.open(await factory.getJettonVault(jettonAddress));
-        const jettonRoot = tonClient.open(JettonRoot.createFromAddress(jettonAddress));
-        const jettonWallet = tonClient.open(
-          await jettonRoot.getWallet(Address.parse(walletData.address))
-        );
-        const swapPayload = VaultJetton.createSwapPayload({
-          poolAddress: pool.address,
-          limit: minAmountOut,
-        });
-        await jettonWallet.sendTransfer(sender, toNano(DEDUST_GAS.SWAP_JETTON_TO_ANY), {
-          destination: jettonVault.address,
-          amount: amountIn,
-          responseAddress: Address.parse(walletData.address),
-          forwardAmount: toNano(DEDUST_GAS.FORWARD_GAS),
-          forwardPayload: swapPayload,
-        });
-      }
-    } catch (error) {
-      broadcastError = error;
+    if (isTonInput) {
+      const tonVault = tonClient.open(await factory.getNativeVault());
+      await tonVault.sendSwap(sender, {
+        poolAddress: pool.address,
+        amount: amountIn,
+        limit: minAmountOut,
+        gasAmount: toNano(DEDUST_GAS.SWAP_TON_TO_JETTON),
+      });
+    } else {
+      const jettonAddress = Address.parse(fromAsset);
+      const jettonVault = tonClient.open(await factory.getJettonVault(jettonAddress));
+      const jettonRoot = tonClient.open(JettonRoot.createFromAddress(jettonAddress));
+      const jettonWallet = tonClient.open(
+        await jettonRoot.getWallet(Address.parse(walletData.address))
+      );
+      const swapPayload = VaultJetton.createSwapPayload({
+        poolAddress: pool.address,
+        limit: minAmountOut,
+      });
+      await jettonWallet.sendTransfer(sender, toNano(DEDUST_GAS.SWAP_JETTON_TO_ANY), {
+        destination: jettonVault.address,
+        amount: amountIn,
+        responseAddress: Address.parse(walletData.address),
+        forwardAmount: toNano(DEDUST_GAS.FORWARD_GAS),
+        forwardPayload: swapPayload,
+      });
     }
 
-    const confirmed = await confirmWalletTx(tonClient, walletContract.address, sinceLt);
+    const confirmed = await sendWalletTx(tonClient, walletContract, {
+      secretKey: keyPair.secretKey,
+      messages,
+    });
     if (!confirmed) {
-      if (broadcastError) throw broadcastError;
       throw new PluginSDKError(
         "Swap transaction failed or could not be confirmed on-chain",
         "OPERATION_FAILED"

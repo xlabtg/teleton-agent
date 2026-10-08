@@ -92,6 +92,19 @@ export function openDealsDb(): Database.Database {
   // One-time migration from memory.db (existing users)
   migrateFromMainDb(db, ["deals", "user_trade_stats", "used_transactions"]);
 
+  // Fail closed if historical duplicate claims require reconciliation; never erase payout evidence.
+  try {
+    db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_deals_gift_payment_unique ON deals(user_payment_gift_msgid) WHERE user_payment_gift_msgid IS NOT NULL"
+    );
+  } catch (error) {
+    db.close();
+    db = null;
+    throw new Error(
+      "Duplicate gift payment claims in deals.db; reconcile historical payouts before restarting",
+      { cause: error }
+    );
+  }
   return db;
 }
 

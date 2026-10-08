@@ -142,14 +142,14 @@ describe("sendWalletTx", () => {
     expect(result?.hash).toBe("11".repeat(32));
   });
 
-  it("rethrows the broadcast error when nothing lands on-chain", async () => {
+  it("reports uncertainty when broadcast and confirmation are unavailable", async () => {
     const contract = fakeContract();
     contract.sendTransfer.mockRejectedValue(new Error("network down"));
     const getTx = vi.fn().mockResolvedValue([]);
 
     await expect(
       sendWalletTx(fakeClient(getTx), contract as never, { secretKey, messages: [] })
-    ).rejects.toThrow("network down");
+    ).rejects.toThrow("unknown/pending");
   });
 });
 

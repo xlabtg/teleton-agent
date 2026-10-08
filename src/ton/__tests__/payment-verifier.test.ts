@@ -212,6 +212,25 @@ describe("PaymentVerifier", () => {
       expect(result.playerWallet).toBe("EQSenderAddress");
     });
 
+    it("finds a matching payment after a full page of unrelated transfers", async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const dust = Array.from({ length: 20 }, (_, i) => ({
+        ...makeTx({ coins: 1n, now, comment: "unrelated" }),
+        lt: BigInt(100 - i),
+        hash: () => Buffer.from(`dust-${i}`),
+      }));
+      const payment = { ...makeTx({ coins: 1000000000n, now, comment: "testuser" }), lt: 79n };
+      const getTransactions = vi.fn().mockResolvedValueOnce(dust).mockResolvedValueOnce([payment]);
+      mocks.fromNano.mockReturnValue("1.0");
+      (getCachedTonClient as Mock).mockResolvedValue({ getTransactions });
+
+      const result = await verifyPayment(db, baseParams);
+
+      expect(result.verified).toBe(true);
+      expect(getTransactions).toHaveBeenCalledTimes(2);
+      expect(getTransactions.mock.calls[1][1]).toMatchObject({ lt: "81", inclusive: false });
+    });
+
     it("should return verified=false on second call with same txHash (replay prevention)", async () => {
       const now = Math.floor(Date.now() / 1000);
       const tx = makeTx({ coins: 1000000000n, now, comment: "testuser" });

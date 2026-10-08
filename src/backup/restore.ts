@@ -1,3 +1,5 @@
+import { renameSync, rmSync } from "fs";
+import { randomUUID } from "crypto";
 // src/backup/restore.ts
 //
 // Restores a `.tar.gz` backup produced by createBackup(). The restore is
@@ -150,7 +152,17 @@ export function restoreBackup(options: RestoreOptions): RestoreResult {
     if (!existsSync(destDir)) {
       mkdirSync(destDir, { recursive: true });
     }
-    writeFileSync(destAbs, data, { mode: 0o600 });
+    const temp = `${destAbs}.restore-${randomUUID()}`;
+    try {
+      writeFileSync(temp, data, { mode: 0o600, flag: "wx" });
+      if (file.kind === "sqlite") {
+        for (const suffix of ["-wal", "-shm", "-journal"])
+          rmSync(`${destAbs}${suffix}`, { force: true });
+      }
+      renameSync(temp, destAbs);
+    } finally {
+      rmSync(temp, { force: true });
+    }
     restoredFiles.push(file.path);
   }
 

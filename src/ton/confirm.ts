@@ -1,5 +1,5 @@
 import type { WalletContractV5R1, TonClient, OpenedContract } from "@ton/ton";
-import { SendMode, type Address, type MessageRelaxed } from "@ton/core";
+import { internal, SendMode, type Address, type MessageRelaxed, type Sender } from "@ton/core";
 import { invalidateTonClientCache } from "./wallet-service.js";
 import { createLogger } from "../utils/logger.js";
 import { withBlockchainRetry } from "../utils/retry.js";
@@ -52,9 +52,14 @@ export async function walletTxLt(client: TonClient, walletAddress: Address): Pro
 export async function confirmWalletTx(
   client: TonClient,
   walletAddress: Address,
-  sinceLt: bigint
+  sinceLt: bigint,
+  validUntil?: number,
+  onRejected?: () => void
 ): Promise<ConfirmedTx | null> {
-  const deadline = Date.now() + TON_CONFIRM_TIMEOUT_MS;
+  const deadline = Math.max(
+    Date.now() + TON_CONFIRM_TIMEOUT_MS,
+    (validUntil ?? 0) * 1000 + Math.min(30_000, TON_CONFIRM_TIMEOUT_MS / 3)
+  );
 
   while (Date.now() < deadline) {
     try {
@@ -65,6 +70,7 @@ export async function confirmWalletTx(
         const d = ours.description;
         if (d.type !== "generic") {
           log.error({ type: d.type }, "Unexpected transfer transaction type");
+          onRejected?.();
           return null;
         }
         const computeOk = d.computePhase.type === "vm" && d.computePhase.success;
@@ -78,6 +84,7 @@ export async function confirmWalletTx(
             },
             "Transfer failed on-chain — funds did not leave the wallet"
           );
+          onRejected?.();
           return null;
         }
         return { hash: ours.hash().toString("hex"), at: ours.now * 1000 };
@@ -94,8 +101,8 @@ export async function confirmWalletTx(
 /**
  * Broadcast a transfer once, then confirm it on-chain and return the real hash. We confirm
  * regardless of the broadcast call's outcome — the message can land even if the RPC response
- * errors, and re-broadcasting a consumed seqno is a no-op. Returns null if unconfirmed within
- * the finality window (never an optimistic success). Callers MUST hold the wallet tx-lock.
+ * errors, and re-broadcasting a consumed seqno is a no-op. Returns null for a confirmed on-chain rejection; throws a pending error
+ * if the finality window expires without a conclusive result (never an optimistic success). Callers MUST hold the wallet tx-lock.
  */
 export async function sendWalletTx(
   client: TonClient,
@@ -105,10 +112,14 @@ export async function sendWalletTx(
   const seqno = await withBlockchainRetry(() => contract.getSeqno(), "getSeqno");
   const sinceLt = await walletTxLt(client, contract.address);
 
+  // Explicit expiry always falls inside the confirmation window, with indexing margin.
+  const validUntil =
+    Math.floor(Date.now() / 1000) + Math.max(0, Math.floor(TON_CONFIRM_TIMEOUT_MS / 1000) - 30);
   let broadcastError: unknown;
   try {
     await contract.sendTransfer({
       seqno,
+      timeout: validUntil,
       secretKey: args.secretKey,
       sendMode: args.sendMode ?? SendMode.PAY_GAS_SEPARATELY,
       messages: args.messages,
@@ -119,10 +130,54 @@ export async function sendWalletTx(
     log.warn({ err: error }, "Broadcast errored — verifying on-chain whether it landed");
   }
 
-  const confirmed = await confirmWalletTx(client, contract.address, sinceLt);
+  let rejected = false;
+  const confirmed = await confirmWalletTx(client, contract.address, sinceLt, validUntil, () => {
+    rejected = true;
+  });
   if (!confirmed) {
-    if (broadcastError) throw broadcastError;
-    return null;
+    if (rejected) return null;
+    throw new WalletTransferPendingError(seqno, validUntil, broadcastError);
   }
   return { hash: confirmed.hash, seqno, at: confirmed.at };
+}
+
+/** RPC/indexer uncertainty must never be represented as a safe-to-retry failure. */
+export class WalletTransferPendingError extends Error {
+  constructor(
+    public readonly seqno: number,
+    public readonly validUntil: number,
+    cause?: unknown
+  ) {
+    super(
+      `TON transfer status unknown/pending (seqno ${seqno}); reconcile on-chain before retrying`,
+      { cause }
+    );
+    this.name = "WalletTransferPendingError";
+  }
+}
+
+/** Let contract SDKs construct messages without bypassing our wallet validity/confirmation path. */
+export function createWalletMessageCollector(address: Address): {
+  sender: Sender;
+  messages: MessageRelaxed[];
+} {
+  const messages: MessageRelaxed[] = [];
+  const sender: Sender = {
+    address,
+    send: async (args) => {
+      if (args.sendMode !== undefined && args.sendMode !== SendMode.PAY_GAS_SEPARATELY) {
+        throw new Error("Unsupported wallet send mode");
+      }
+      messages.push(
+        internal({
+          to: args.to,
+          value: args.value,
+          body: args.body,
+          bounce: args.bounce ?? true,
+          init: args.init ?? undefined,
+        })
+      );
+    },
+  };
+  return { sender, messages };
 }

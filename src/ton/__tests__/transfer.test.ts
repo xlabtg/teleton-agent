@@ -145,9 +145,9 @@ describe("sendTon", () => {
     expect(h.contract.sendTransfer).toHaveBeenCalledTimes(1);
   });
 
-  it("returns null when the transfer is not confirmed within the window", async () => {
+  it("reports pending when the transfer cannot be confirmed", async () => {
     h.client.getTransactions.mockResolvedValue([]); // never appears
-    expect(await sendTon({ toAddress: GOOD, amount: 1 })).toBeNull();
+    await expect(sendTon({ toAddress: GOOD, amount: 1 })).rejects.toThrow("unknown/pending");
   });
 
   it("still confirms via the chain when the broadcast call errors but the message lands", async () => {
@@ -160,11 +160,11 @@ describe("sendTon", () => {
     expect(result?.hash).toBe("ef".repeat(32));
   });
 
-  it("rethrows the broadcast error when nothing lands on-chain", async () => {
+  it("reports pending when broadcast and confirmation are unavailable", async () => {
     h.contract.sendTransfer.mockRejectedValue(new Error("network down"));
     h.client.getTransactions.mockResolvedValue([]);
 
-    await expect(sendTon({ toAddress: GOOD, amount: 1 })).rejects.toThrow("network down");
+    await expect(sendTon({ toAddress: GOOD, amount: 1 })).rejects.toThrow("unknown/pending");
   });
 
   it("invalidates the node cache on a 5xx broadcast error", async () => {

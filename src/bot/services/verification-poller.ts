@@ -1,3 +1,4 @@
+import { isGiftPaymentUsed, claimGiftPayment } from "../../deals/gift-matcher.js";
 /**
  * Verification Poller - automatically verifies deals with payment_claimed status
  * Runs in background, checking for TON payments and gift receipts
@@ -221,6 +222,8 @@ export class VerificationPoller {
       // Telegram epoch seconds, so they compare directly.
       const matchingGift = gifts.find(
         (g) =>
+          g.msgId !== undefined &&
+          !isGiftPaymentUsed(this.db, g.msgId) &&
           g.slug === deal.userGivesGiftSlug &&
           Number(g.fromId) === deal.userId &&
           g.date &&
@@ -267,16 +270,9 @@ export class VerificationPoller {
         .run(txHash, playerWallet, deal.dealId);
       transitioned = result.changes === 1;
     } else {
-      const result = this.db
-        .prepare(
-          `UPDATE deals SET
-            status = 'verified',
-            user_payment_gift_msgid = ?,
-            user_payment_verified_at = unixepoch()
-          WHERE id = ? AND status = 'payment_claimed'`
-        )
-        .run(giftMsgId, deal.dealId);
-      transitioned = result.changes === 1;
+      transitioned =
+        giftMsgId !== undefined &&
+        claimGiftPayment(this.db, deal.dealId, giftMsgId, "payment_claimed");
     }
 
     // Another poller already transitioned this deal — abort

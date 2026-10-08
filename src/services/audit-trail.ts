@@ -167,6 +167,7 @@ export class AuditTrailService {
 
   private ensureTable(): void {
     this.db.exec(`
+      CREATE TABLE IF NOT EXISTS audit_anchor (id INTEGER PRIMARY KEY CHECK(id = 1), sequence INTEGER NOT NULL, checksum TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS audit_events (
         id                TEXT PRIMARY KEY,
         sequence          INTEGER NOT NULL UNIQUE,
@@ -195,16 +196,20 @@ export class AuditTrailService {
       const previous = this.db
         .prepare(`SELECT sequence, checksum FROM audit_events ORDER BY sequence DESC LIMIT 1`)
         .get() as { sequence: number; checksum: string } | undefined;
+      const anchor = this.db
+        .prepare("SELECT sequence, checksum FROM audit_anchor WHERE id = 1")
+        .get() as { sequence: number; checksum: string } | undefined;
+      const predecessor = previous ?? anchor;
 
       const rowWithoutChecksum = {
         id: randomUUID(),
-        sequence: (previous?.sequence ?? 0) + 1,
+        sequence: (predecessor?.sequence ?? 0) + 1,
         event_type: event.eventType,
         actor: event.actor ?? "system",
         session_id: event.sessionId ?? null,
         payload: this.serializePayload(event.payload ?? {}),
         parent_event_id: event.parentEventId ?? null,
-        previous_checksum: previous?.checksum ?? null,
+        previous_checksum: predecessor?.checksum ?? null,
         created_at: event.createdAt ?? Math.floor(Date.now() / 1000),
       };
       const checksum = this.computeChecksum(rowWithoutChecksum);
@@ -298,7 +303,10 @@ export class AuditTrailService {
           `SELECT checksum FROM audit_events WHERE sequence < ? ORDER BY sequence DESC LIMIT 1`
         )
         .get(rows[0].sequence) as { checksum: string } | undefined;
-      previousChecksum = previous?.checksum ?? null;
+      const anchor = this.db
+        .prepare("SELECT checksum FROM audit_anchor WHERE id = 1 AND sequence < ?")
+        .get(rows[0].sequence) as { checksum: string } | undefined;
+      previousChecksum = previous?.checksum ?? anchor?.checksum ?? null;
     }
 
     const result: AuditVerifyResult = {
@@ -444,8 +452,34 @@ export class AuditTrailService {
   }
 
   pruneBefore(cutoffUnix: number): number {
-    const result = this.db.prepare(`DELETE FROM audit_events WHERE created_at < ?`).run(cutoffUnix);
-    return result.changes;
+    if (this.db.inTransaction) throw new Error("Audit pruning requires its own transaction");
+    const foreignKeys = this.db.pragma("foreign_keys", { simple: true });
+    // Preserve hashed parent IDs at the retention boundary (ON DELETE SET NULL would mutate them).
+    this.db.pragma("foreign_keys = OFF");
+    try {
+      return this.db.transaction(() => {
+        const boundary = this.db
+          .prepare("SELECT MIN(sequence) AS seq FROM audit_events WHERE created_at >= ?")
+          .get(cutoffUnix) as { seq: number | null };
+        const last = this.db
+          .prepare(
+            "SELECT sequence, checksum FROM audit_events WHERE sequence < ? ORDER BY sequence DESC LIMIT 1"
+          )
+          .get(boundary.seq ?? Number.MAX_SAFE_INTEGER) as
+          | { sequence: number; checksum: string }
+          | undefined;
+        if (!last) return 0;
+        this.db
+          .prepare(
+            "INSERT INTO audit_anchor (id, sequence, checksum) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET sequence = excluded.sequence, checksum = excluded.checksum"
+          )
+          .run(last.sequence, last.checksum);
+        return this.db.prepare("DELETE FROM audit_events WHERE sequence <= ?").run(last.sequence)
+          .changes;
+      })();
+    } finally {
+      this.db.pragma(`foreign_keys = ${foreignKeys ? "ON" : "OFF"}`);
+    }
   }
 
   private serializePayload(payload: Record<string, unknown>): string {

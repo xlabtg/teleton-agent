@@ -7,7 +7,7 @@ import type Database from "better-sqlite3";
 import type { ITelegramBridge } from "../telegram/bridge-interface.js";
 import type { Deal } from "./types.js";
 import { sendTon } from "../ton/transfer.js";
-import { tonExplorerTxUrl } from "../ton/confirm.js";
+import { tonExplorerTxUrl, WalletTransferPendingError } from "../ton/confirm.js";
 import { formatAsset } from "./utils.js";
 import { JournalStore } from "../memory/journal-store.js";
 import { getErrorMessage } from "../utils/errors.js";
@@ -257,6 +257,13 @@ Thank you for trading! 🎉`,
     };
   } catch (error) {
     log.error({ err: error }, `Error executing deal #${dealId}`);
+    if (error instanceof WalletTransferPendingError) {
+      db.prepare("UPDATE deals SET agent_sent_tx_status = 'pending', notes = ? WHERE id = ?").run(
+        getErrorMessage(error),
+        dealId
+      );
+      return { success: false, error: getErrorMessage(error) };
+    }
     // Release lock on unexpected error
     try {
       db.prepare(
