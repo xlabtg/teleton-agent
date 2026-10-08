@@ -12,6 +12,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > [CONTRIBUTING.md](CONTRIBUTING.md#commit-conventions)). The entries below this
 > note are preserved as the historical, manually-maintained record.
 
+## [0.9.0](https://github.com/xlabtg/teleton-agent/compare/v0.8.56...v0.9.0) (2026-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **security:** входящий webhook требует X-Webhook-Timestamp. Подпись использует inbound:<timestamp>.<rawBody>; отправителей необходимо обновить.
+
+### Bug Fixes
+
+* **deploy:** защитить CI, исправить установку fork и удалить временные артефакты ([bbad495](https://github.com/xlabtg/teleton-agent/commit/bbad49518cde8ffbdb0c7b67969a526d032dd9f9))
+* **deps:** закрыть high-уязвимости npm audit (sharp, undici, faker, chokidar) ([295a226](https://github.com/xlabtg/teleton-agent/commit/295a226bd81f82701e94e9458b332023186147e4))
+* **nvidia:** вернуть модель по умолчанию z-ai/glm-5.1 в каталог ([#753](https://github.com/xlabtg/teleton-agent/issues/753)) ([0950737](https://github.com/xlabtg/teleton-agent/commit/09507378f15b6e305bd4ca7af16aed4ff9f4f955))
+* **runtime:** исправить команды, отмену инструментов и восстановление состояния ([5bef33f](https://github.com/xlabtg/teleton-agent/commit/5bef33f6152b4a8b80ebf6465c47eda704fc82d3))
+* **security:** изолировать setup, webhook и окружение агентов ([de92ed4](https://github.com/xlabtg/teleton-agent/commit/de92ed48e1ce76264e62cd1484aa84d4db7a1424))
+* **ton:** предотвратить повторные выплаты и ошибки денежных расчётов ([921ad51](https://github.com/xlabtg/teleton-agent/commit/921ad510fe3cd316b8298bd01d1b0cab7e77a6ca))
+
+
+### Documentation
+
+* **audit:** аудит логики V8 ([#738](https://github.com/xlabtg/teleton-agent/issues/738)) — 27 находок с шаблонами issue ([33f6971](https://github.com/xlabtg/teleton-agent/commit/33f6971ebeafcfbabf02e64152ee923a2ed5500f))
+* **audit:** аудит логики V8 ([#738](https://github.com/xlabtg/teleton-agent/issues/738)) — 27 находок, заведены как [#740](https://github.com/xlabtg/teleton-agent/issues/740)–[#766](https://github.com/xlabtg/teleton-agent/issues/766) ([040dca3](https://github.com/xlabtg/teleton-agent/commit/040dca33c0db0bf767bcac2cc0c899e9f3ccb2cf))
+* **audit:** проставить ссылки на заведённые issue [#740](https://github.com/xlabtg/teleton-agent/issues/740)–[#766](https://github.com/xlabtg/teleton-agent/issues/766) ([553ea7b](https://github.com/xlabtg/teleton-agent/commit/553ea7b2eeb60dcdc146ac947bbeaeb92e5d10a8))
+* **audit:** проставить ссылки на заведённые issue [#740](https://github.com/xlabtg/teleton-agent/issues/740)–[#766](https://github.com/xlabtg/teleton-agent/issues/766) ([aa8d153](https://github.com/xlabtg/teleton-agent/commit/aa8d153b2787c74168946852722c1e312e1ceca1))
+
 ## [0.8.56](https://github.com/xlabtg/teleton-agent/compare/v0.8.55...v0.8.56) (2026-07-14)
 
 
