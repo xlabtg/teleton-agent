@@ -57,6 +57,11 @@ blockedIpRanges.addAddress("::1", "ipv6");
 blockedIpRanges.addSubnet("fc00::", 7, "ipv6");
 blockedIpRanges.addSubnet("fe80::", 10, "ipv6");
 blockedIpRanges.addSubnet("ff00::", 8, "ipv6");
+// Translation/tunnelling ranges can conceal private IPv4 destinations.
+blockedIpRanges.addSubnet("64:ff9b::", 96, "ipv6");
+blockedIpRanges.addSubnet("64:ff9b:1::", 48, "ipv6");
+blockedIpRanges.addSubnet("2002::", 16, "ipv6");
+blockedIpRanges.addSubnet("2001::", 32, "ipv6");
 
 export function validateOutboundUrl(raw: string, options: OutboundUrlGuardOptions): URL {
   let url: URL;

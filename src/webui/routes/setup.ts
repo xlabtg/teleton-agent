@@ -220,6 +220,16 @@ export function createSetupRoutes(options?: { keyHash?: string }): Hono {
   // ── POST /wallet/generate ─────────────────────────────────────────
   app.post("/wallet/generate", async (c) => {
     try {
+      if (walletExists()) {
+        const body = await c.req
+          .json<{ overwrite?: boolean }>()
+          .catch(() => ({}) as { overwrite?: boolean });
+        if (body.overwrite !== true)
+          return c.json(
+            { success: false, error: "Wallet already exists; explicit overwrite required" },
+            409
+          );
+      }
       const wallet = await generateWallet();
       saveWallet(wallet);
       log.info("New TON wallet generated via setup UI");
@@ -235,7 +245,12 @@ export function createSetupRoutes(options?: { keyHash?: string }): Hono {
   // ── POST /wallet/import ───────────────────────────────────────────
   app.post("/wallet/import", async (c) => {
     try {
-      const body = await c.req.json<{ mnemonic: string }>();
+      const body = await c.req.json<{ mnemonic: string; overwrite?: boolean }>();
+      if (walletExists() && body.overwrite !== true)
+        return c.json(
+          { success: false, error: "Wallet already exists; explicit overwrite required" },
+          409
+        );
       const words = body.mnemonic.trim().split(/\s+/);
       if (words.length !== 24) {
         return c.json({ success: false, error: `Expected 24 words, got ${words.length}` }, 400);

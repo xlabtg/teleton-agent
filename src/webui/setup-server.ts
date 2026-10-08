@@ -116,6 +116,28 @@ export class SetupServer {
   }
 
   private setupMiddleware(): void {
+    // CORS alone does not prevent a browser from executing a cross-site request.
+    this.app.use("*", async (c, next) => {
+      const url = new URL(c.req.url);
+      const host = c.req.header("Host") ?? url.host;
+      const hosts = new Set([`localhost:${this.port}`, `127.0.0.1:${this.port}`]);
+      const origin = c.req.header("Origin");
+      const origins = new Set(
+        [...hosts]
+          .map((h) => `http://${h}`)
+          .concat(["http://localhost:5173", "http://127.0.0.1:5173"])
+      );
+      if (!hosts.has(host.toLowerCase()) || (origin && !origins.has(origin))) {
+        return c.json({ success: false, error: "Forbidden setup origin or host" }, 403);
+      }
+      if (
+        ["POST", "PUT", "PATCH"].includes(c.req.method) &&
+        !/^application\/json(?:;|$)/i.test(c.req.header("Content-Type") ?? "")
+      ) {
+        return c.json({ success: false, error: "Setup requires application/json" }, 415);
+      }
+      await next();
+    });
     // CORS for localhost
     this.app.use(
       "*",

@@ -54,6 +54,53 @@ describe("WebhookDispatcher", () => {
     }
   });
 
+  it("rejects reflected, stale and replayed inbound signatures (#742)", () => {
+    const dispatcher = getWebhookDispatcher(db);
+    const webhook = dispatcher.createWebhook({
+      url: "https://hooks.example.com/x",
+      events: ["*"],
+      secret: "secret",
+    });
+    const body = JSON.stringify({ type: "security.alert" });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const outbound = "sha256=" + createHmac("sha256", "secret").update(body).digest("hex");
+    expect(() =>
+      dispatcher.verifyIncomingSignature(webhook.id, body, outbound, timestamp)
+    ).toThrow();
+    const signature =
+      "sha256=" +
+      createHmac("sha256", "secret").update(`inbound:${timestamp}.${body}`).digest("hex");
+    expect(() =>
+      dispatcher.verifyIncomingSignature(webhook.id, body, signature, timestamp)
+    ).not.toThrow();
+    expect(() =>
+      dispatcher.verifyIncomingSignature(webhook.id, body, signature, timestamp)
+    ).toThrow(/replay/i);
+    expect(() => dispatcher.verifyIncomingSignature(webhook.id, body, signature, "1")).toThrow();
+  });
+  it("never fans inbound events back to outbound webhooks (#742)", async () => {
+    const dispatcher = getWebhookDispatcher(db);
+    dispatcher.createWebhook({ url: "https://hooks.example.com/x", events: ["*"] });
+    expect(await dispatcher.dispatchEvent(makeEvent("webhook.incoming"))).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("recovers retries after restart (#755)", async () => {
+    vi.useFakeTimers();
+    try {
+      const first = new WebhookDispatcher(db, { retryBackoffsMs: [1000] });
+      first.createWebhook({ url: "https://hooks.example.com/x", events: ["*"], maxRetries: 3 });
+      fetchMock.mockRejectedValueOnce(new Error("offline"));
+      const [delivery] = await first.dispatchEvent(makeEvent());
+      expect(delivery.status).toBe("retrying");
+      first.stop();
+      const second = new WebhookDispatcher(db);
+      await vi.advanceTimersByTimeAsync(1001);
+      expect(second.getDelivery(delivery.id)?.status).toBe("delivered");
+      second.stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("signs and delivers matching events to active webhooks", async () => {
     const dispatcher = getWebhookDispatcher(db);
     const webhook = dispatcher.createWebhook({

@@ -143,8 +143,11 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
       events: ["external.other"],
       secret: "incoming-secret",
     });
-    const raw = JSON.stringify({ type: "external.test", repository: "demo" });
-    const signature = createHmac("sha256", "incoming-secret").update(raw).digest("hex");
+    const raw = JSON.stringify({ type: "webhook.incoming", repository: "demo" });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = createHmac("sha256", "incoming-secret")
+      .update(`inbound:${timestamp}.${raw}`)
+      .digest("hex");
 
     const res = await app.request(`/api/webhooks/incoming/${webhook.id}`, {
       method: "POST",
@@ -152,14 +155,15 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Webhook-Signature": `sha256=${signature}`,
+        "X-Webhook-Timestamp": timestamp,
       },
     });
     const json = await res.json();
 
     expect(res.status).toBe(202);
     expect(json.success).toBe(true);
-    expect(json.data.type).toBe("external.test");
-    expect(getEventBus(db).listEvents({ type: "external.test" }).total).toBe(1);
+    expect(json.data.type).toBe("webhook.incoming");
+    expect(getEventBus(db).listEvents({ type: "webhook.incoming" }).total).toBe(1);
   });
 
   it("keeps invalid incoming webhook signatures rejected by the route verifier", async () => {
@@ -171,7 +175,7 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
 
     const res = await app.request(`/api/webhooks/incoming/${webhook.id}`, {
       method: "POST",
-      body: JSON.stringify({ type: "external.test" }),
+      body: JSON.stringify({ type: "webhook.incoming" }),
       headers: {
         "Content-Type": "application/json",
         "X-Webhook-Signature": "sha256=bad",
@@ -181,7 +185,7 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
 
     expect(res.status).toBe(401);
     expect(json.success).toBe(false);
-    expect(json.error).toBe("Invalid webhook signature");
+    expect(json.error).toMatch(/Invalid.*webhook signature/);
   });
 
   it("allows workflow webhook secrets without WebUI auth cookies or CSRF headers", async () => {
@@ -223,7 +227,7 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
       method: "POST",
       body: JSON.stringify({
         url: "https://hooks.example.com/teleton",
-        events: ["external.test"],
+        events: ["webhook.incoming"],
       }),
       headers: { "Content-Type": "application/json" },
     });
@@ -234,7 +238,7 @@ describe("WebUIServer public signed ingress middleware bypass", () => {
       method: "POST",
       body: JSON.stringify({
         url: "https://hooks.example.com/teleton",
-        events: ["external.test"],
+        events: ["webhook.incoming"],
       }),
       headers: {
         "Content-Type": "application/json",

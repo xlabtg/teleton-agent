@@ -72,6 +72,7 @@ vi.mock("../setup-auth.js", () => ({
   },
 }));
 
+import { walletExists, generateWallet, importWallet } from "../../ton/wallet-service.js";
 import { SetupServer, SETUP_NONCE_HEADER } from "../setup-server.js";
 import { verifyToken } from "../middleware/token-hash.js";
 
@@ -84,9 +85,9 @@ function fetchApp(server: SetupServer): (req: Request) => Promise<Response> {
 }
 
 function launchRequest(nonce: string | null): Request {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (nonce !== null) headers[SETUP_NONCE_HEADER] = nonce;
-  return new Request("http://localhost/api/setup/launch", {
+  return new Request("http://localhost:7777/api/setup/launch", {
     method: "POST",
     headers,
   });
@@ -96,16 +97,47 @@ describe("SetupServer.POST /api/setup/launch (AUDIT-H7)", () => {
   let server: SetupServer;
   let configPath: string;
 
+  it.each([
+    { Origin: "https://evil.example", "Content-Type": "application/json" },
+    { Host: "evil.example:7777", "Content-Type": "application/json" },
+    { "Content-Type": "text/plain" },
+  ])("rejects hostile setup requests (#741)", async (headers) => {
+    const response = await fetchApp(server)(
+      new Request("http://localhost:7777/api/setup/wallet/generate", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
+    );
+    expect([403, 415]).toContain(response.status);
+  });
   beforeEach(() => {
     tmpRoot = mkdtempSync(join(tmpdir(), "teleton-h7-"));
     configPath = join(tmpRoot, "config.yaml");
     writeFileSync(configPath, YAML.stringify({ webui: { enabled: false } }), "utf-8");
-    server = new SetupServer(0);
+    server = new SetupServer(7777);
   });
 
   afterEach(() => {
     rmSync(tmpRoot, { recursive: true, force: true });
   });
+
+  it.each(["generate", "import"])(
+    "does not implicitly overwrite existing wallets via %s (#741)",
+    async (route) => {
+      vi.mocked(walletExists).mockReturnValueOnce(true);
+      const res = await fetchApp(server)(
+        new Request(`http://localhost:7777/api/setup/wallet/${route}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mnemonic: "test" }),
+        })
+      );
+      expect(res.status).toBe(409);
+      expect(generateWallet).not.toHaveBeenCalled();
+      expect(importWallet).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects launch requests with no nonce (401)", async () => {
     const res = await fetchApp(server)(launchRequest(null));

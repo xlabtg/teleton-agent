@@ -15,6 +15,8 @@ export interface SemanticMemoryContext {
  * Context provided to tool executors
  */
 export interface ToolContext {
+  /** Cancellation of this tool execution. */
+  signal?: AbortSignal;
   /** Telegram bridge for sending messages, reactions, etc. */
   bridge: ITelegramBridge;
   /** Database instance for storage */

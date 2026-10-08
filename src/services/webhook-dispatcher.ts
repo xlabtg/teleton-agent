@@ -231,6 +231,13 @@ export class WebhookDispatcher {
         log.warn({ err, eventId: event.id, eventType: event.type }, "Webhook dispatch failed");
       });
     });
+    const pending = this.db
+      .prepare(
+        "SELECT id, next_attempt_at FROM webhook_deliveries WHERE status IN ('retrying', 'pending')"
+      )
+      .all() as Array<{ id: string; next_attempt_at: number | null }>;
+    for (const row of pending)
+      this.scheduleRetry(row.id, Math.max(0, (row.next_attempt_at ?? nowMs()) - nowMs()));
   }
 
   stop(): void {
@@ -343,6 +350,8 @@ export class WebhookDispatcher {
   }
 
   async dispatchEvent(event: TeletonEvent): Promise<WebhookDelivery[]> {
+    // Inbound events are a terminal integration boundary: never reflect them outbound.
+    if (event.type === "webhook.incoming") return [];
     const webhooks = this.listStoredWebhooks().filter(
       (webhook) => webhook.active && matchesEvent(webhook, event.type)
     );
@@ -385,15 +394,30 @@ export class WebhookDispatcher {
   verifyIncomingSignature(
     webhookId: string,
     rawBody: string,
-    signatureHeader: string | null
+    signatureHeader: string | null,
+    timestampHeader?: string | null
   ): void {
     const webhook = this.getStoredWebhook(webhookId);
     if (!webhook || !webhook.active) throw new Error("Webhook not found");
     if (!signatureHeader) throw new Error("Missing X-Webhook-Signature header");
-    const expected = signedHeader(webhook.secret, rawBody);
-    if (!safeCompare(signatureHeader, expected)) {
-      throw new Error("Invalid webhook signature");
+    if (
+      !timestampHeader ||
+      !/^\d{1,12}$/.test(timestampHeader) ||
+      Math.abs(nowMs() - Number(timestampHeader) * 1000) > 300_000
+    ) {
+      throw new Error("Invalid or stale webhook signature timestamp");
     }
+    const expected = signedHeader(webhook.secret, `inbound:${timestampHeader}.${rawBody}`);
+    if (!safeCompare(signatureHeader, expected)) throw new Error("Invalid webhook signature");
+    const claim = this.db.transaction(() => {
+      this.db.prepare("DELETE FROM webhook_incoming_receipts WHERE expires_at < ?").run(nowMs());
+      return this.db
+        .prepare(
+          "INSERT OR IGNORE INTO webhook_incoming_receipts (webhook_id, signature, expires_at) VALUES (?, ?, ?)"
+        )
+        .run(webhookId, expected, Number(timestampHeader) * 1000 + 300_000).changes;
+    })();
+    if (claim !== 1) throw new Error("Replayed webhook signature");
   }
 
   private async dispatchToWebhook(
@@ -535,6 +559,7 @@ export class WebhookDispatcher {
 
   private migrate(): void {
     this.db.exec(`
+      CREATE TABLE IF NOT EXISTS webhook_incoming_receipts (webhook_id TEXT NOT NULL, signature TEXT NOT NULL, expires_at INTEGER NOT NULL, PRIMARY KEY(webhook_id, signature));
       CREATE TABLE IF NOT EXISTS webhooks (
         id          TEXT PRIMARY KEY,
         url         TEXT NOT NULL,

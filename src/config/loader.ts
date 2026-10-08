@@ -109,7 +109,7 @@ function warnPlaceholders(config: Config): void {
   }
 }
 
-export function loadConfig(configPath: string = DEFAULT_CONFIG_PATH): Config {
+export function readConfigFile(configPath: string = DEFAULT_CONFIG_PATH): Config {
   const fullPath = expandPath(configPath);
 
   if (!existsSync(fullPath)) {
@@ -182,6 +182,14 @@ export function loadConfig(configPath: string = DEFAULT_CONFIG_PATH): Config {
   // These indicate the user copied config.example.yaml without filling in real values.
   warnPlaceholders(config);
 
+  return config;
+}
+
+export function loadConfig(configPath: string = DEFAULT_CONFIG_PATH): Config {
+  return applyEnvOverrides(readConfigFile(configPath));
+}
+
+export function applyEnvOverrides(config: Config): Config {
   if (process.env.TELETON_API_KEY) {
     config.agent.api_key = process.env.TELETON_API_KEY;
   }

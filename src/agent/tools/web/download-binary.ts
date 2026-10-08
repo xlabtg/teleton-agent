@@ -1,10 +1,13 @@
 import { Type } from "@sinclair/typebox";
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { basename, dirname, extname } from "path";
-import { isIP } from "net";
+import {
+  createPinnedOutboundFetch,
+  validateOutboundUrl,
+} from "../../../services/outbound-url-guard.js";
 import type { Tool, ToolExecutor, ToolResult } from "../types.js";
 import { WEB_DOWNLOAD_BINARY_MAX_BYTES } from "../../../constants/limits.js";
-import { fetchWithTimeout } from "../../../utils/fetch.js";
+
 import { getErrorMessage } from "../../../utils/errors.js";
 import {
   sanitizeFilename,
@@ -19,7 +22,7 @@ interface WebDownloadBinaryParams {
   headers?: Record<string, string>;
 }
 
-const ALLOWED_SCHEMES = new Set(["http:", "https:"]);
+const DOWNLOAD_GUARD = { allowedProtocols: ["http:", "https:"], label: "Blocked download URL" };
 const HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 const BLOCKED_REQUEST_HEADERS = new Set([
   "host",
@@ -115,56 +118,79 @@ export const webDownloadBinaryTool: Tool = {
 
 export const webDownloadBinaryExecutor: ToolExecutor<WebDownloadBinaryParams> = async (
   params,
-  _context
+  context
 ): Promise<ToolResult> => {
   try {
     const { url, filename, headers } = params;
     const parsed = parseHttpUrl(url);
     const requestHeaders = validateRequestHeaders(headers);
 
-    const response = await fetchWithTimeout(parsed.toString(), {
-      headers: requestHeaders,
-      redirect: "follow",
-    });
+    let current = parsed;
+    let hopHeaders = requestHeaders;
+    let response: Response | undefined;
+    const targets: Awaited<ReturnType<typeof createPinnedOutboundFetch>>[] = [];
+    try {
+      for (let hop = 0; hop <= 5; hop++) {
+        const target = await createPinnedOutboundFetch(current.toString(), DOWNLOAD_GUARD);
+        targets.push(target);
+        response = await target.fetch(current.toString(), {
+          headers: hopHeaders,
+          signal: context.signal
+            ? AbortSignal.any([context.signal, AbortSignal.timeout(30_000)])
+            : AbortSignal.timeout(30_000),
+        });
+        if (![301, 302, 303, 307, 308].includes(response.status)) break;
+        await response.body?.cancel();
+        const location = response.headers.get("location");
+        if (!location || hop === 5) throw new Error("Invalid or excessive download redirects");
+        const next = parseHttpUrl(new URL(location, current).toString());
+        if (next.origin !== current.origin) hopHeaders = undefined;
+        current = next;
+      }
+      if (!response) throw new Error("Download returned no response");
 
-    if (!response.ok) {
+      if (!response.ok) {
+        return {
+          success: false,
+          error: `Download failed: ${response.status} ${response.statusText}`,
+        };
+      }
+
+      const finalUrl = response.url || current.toString();
+      const finalParsed = parseHttpUrl(finalUrl);
+      const contentType = normalizeMimeType(response.headers.get("content-type"));
+      const candidateExtension = getCandidateExtension(filename, response, finalParsed);
+
+      validateMimeType(contentType, candidateExtension);
+      validateContentLength(response.headers.get("content-length"));
+
+      const data = await readResponseBody(response, WEB_DOWNLOAD_BINARY_MAX_BYTES);
+      const finalFilename = buildDownloadFilename(filename, response, finalParsed, contentType);
+      const validatedPath = reserveDownloadPath(finalFilename);
+
+      mkdirSync(dirname(validatedPath.absolutePath), { recursive: true });
+
+      // Binary downloads validate scheme, host class, MIME type, size, and workspace path before this write.
+      // codeql[js/http-to-file-access]
+      writeFileSync(validatedPath.absolutePath, data, { mode: 0o600, flag: "wx" });
+
       return {
-        success: false,
-        error: `Download failed: ${response.status} ${response.statusText}`,
+        success: true,
+        data: {
+          filePath: validatedPath.absolutePath,
+          absolutePath: validatedPath.absolutePath,
+          relativePath: validatedPath.relativePath,
+          filename: validatedPath.filename,
+          mimeType: contentType || "application/octet-stream",
+          size: data.byteLength,
+          url,
+          finalUrl,
+        },
       };
+    } finally {
+      await response?.body?.cancel().catch(() => undefined);
+      await Promise.all(targets.map((target) => target.close()));
     }
-
-    const finalUrl = response.url || parsed.toString();
-    const finalParsed = parseHttpUrl(finalUrl);
-    const contentType = normalizeMimeType(response.headers.get("content-type"));
-    const candidateExtension = getCandidateExtension(filename, response, finalParsed);
-
-    validateMimeType(contentType, candidateExtension);
-    validateContentLength(response.headers.get("content-length"));
-
-    const data = await readResponseBody(response, WEB_DOWNLOAD_BINARY_MAX_BYTES);
-    const finalFilename = buildDownloadFilename(filename, response, finalParsed, contentType);
-    const validatedPath = reserveDownloadPath(finalFilename);
-
-    mkdirSync(dirname(validatedPath.absolutePath), { recursive: true });
-
-    // Binary downloads validate scheme, host class, MIME type, size, and workspace path before this write.
-    // codeql[js/http-to-file-access]
-    writeFileSync(validatedPath.absolutePath, data, { mode: 0o600, flag: "wx" });
-
-    return {
-      success: true,
-      data: {
-        filePath: validatedPath.absolutePath,
-        absolutePath: validatedPath.absolutePath,
-        relativePath: validatedPath.relativePath,
-        filename: validatedPath.filename,
-        mimeType: contentType || "application/octet-stream",
-        size: data.byteLength,
-        url,
-        finalUrl,
-      },
-    };
   } catch (error) {
     if (error instanceof WorkspaceSecurityError) {
       return {
@@ -180,53 +206,7 @@ export const webDownloadBinaryExecutor: ToolExecutor<WebDownloadBinaryParams> = 
 };
 
 function parseHttpUrl(url: string): URL {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new Error("Invalid URL");
-  }
-
-  if (!ALLOWED_SCHEMES.has(parsed.protocol)) {
-    throw new Error(`Blocked URL scheme: ${parsed.protocol} - only http/https allowed`);
-  }
-
-  if (isBlockedHostname(parsed.hostname)) {
-    throw new Error(`Blocked private or local hostname: ${parsed.hostname}`);
-  }
-
-  return parsed;
-}
-
-function isBlockedHostname(hostname: string): boolean {
-  const normalized = hostname.toLowerCase();
-  if (normalized === "localhost" || normalized.endsWith(".localhost")) return true;
-
-  const ipVersion = isIP(normalized);
-  if (ipVersion === 4) {
-    const parts = normalized.split(".").map((part) => Number(part));
-    const [first, second] = parts;
-    return (
-      first === 0 ||
-      first === 10 ||
-      first === 127 ||
-      (first === 169 && second === 254) ||
-      (first === 172 && second >= 16 && second <= 31) ||
-      (first === 192 && second === 168) ||
-      (first === 100 && second >= 64 && second <= 127)
-    );
-  }
-
-  if (ipVersion === 6) {
-    return (
-      normalized === "::1" ||
-      normalized.startsWith("fe80:") ||
-      normalized.startsWith("fc") ||
-      normalized.startsWith("fd")
-    );
-  }
-
-  return false;
+  return validateOutboundUrl(url, DOWNLOAD_GUARD);
 }
 
 function validateRequestHeaders(
