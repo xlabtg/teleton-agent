@@ -490,6 +490,11 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
   ],
   nvidia: [
     {
+      value: "z-ai/glm-5.1",
+      name: "GLM-5.1",
+      description: "Default NVIDIA hosted agentic chat model with native tool calling",
+    },
+    {
       value: "z-ai/glm-5-3",
       name: "GLM-5.3",
       description: "NVIDIA hosted agentic chat model with native tool calling",
@@ -501,7 +506,7 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
     },
     {
       value: "deepseek-ai/deepseek-v4.1-flash",
-      name: "DeepSeek v4.1 Flesh",
+      name: "DeepSeek v4.1 Flash",
       description: "Current NVIDIA preview reasoning/chat model",
     },
     {

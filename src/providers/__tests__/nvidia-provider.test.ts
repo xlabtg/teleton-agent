@@ -76,11 +76,17 @@ describe("NVIDIA curated model catalog", () => {
 
     expect(models.length).toBeGreaterThan(0);
     expect(values).toContain("z-ai/glm-5.1");
-    expect(values).toContain("qwen/qwen3-coder-480b-a35b-instruct");
-    expect(values).toContain("mistralai/mistral-small-4-119b-2603");
-    expect(values).toContain("deepseek-ai/deepseek-v3.1-terminus");
-    expect(values).toContain("moonshotai/kimi-k2.6");
-    expect(values).toContain("stepfun-ai/step-3.5-flash");
+    expect(values).toContain("z-ai/glm-5-3");
+    expect(values).toContain("deepseek-ai/deepseek-v4.1-flash");
+    expect(values).toContain("moonshotai/kimi-k3");
+  });
+
+  it("includes the provider default and utility models", () => {
+    const values = getModelsForProvider("nvidia").map((m) => m.value);
+    const meta = getProviderMetadata("nvidia");
+
+    expect(values).toContain(meta.defaultModel);
+    expect(values).toContain(meta.utilityModel);
   });
 
   it("does not expose embedding or reranking models in the chat provider dropdown", () => {
