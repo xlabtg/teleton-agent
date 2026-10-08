@@ -76,6 +76,19 @@ export function createPipelinesRoutes(deps: WebUIServerDeps) {
       store: store(),
       agent: deps.agent,
       agentManager: deps.agentManager,
+      toolContext: {
+        bridge: deps.bridge,
+        db: deps.memory.db,
+        chatId: "pipeline",
+        senderId: deps.agent.getConfig().telegram.admin_ids[0] ?? 0,
+        isGroup: false,
+        config: deps.agent.getConfig(),
+        semanticMemory: {
+          embedder: deps.memory.embedder,
+          vectorEnabled: deps.memory.vectorEnabled ?? false,
+          vectorStore: deps.memory.vectorStore,
+        },
+      },
     });
   }
 

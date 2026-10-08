@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdtempSync } from "node:fs";
-import { ManagedAgentService } from "../service.js";
+import { ManagedAgentService, managedAgentEnvironment } from "../service.js";
 import { loadConfig } from "../../config/loader.js";
 
 const PRIMARY_CONFIG = `
@@ -48,6 +48,31 @@ describe("ManagedAgentService", () => {
     rmSync(rootDir, { recursive: true, force: true });
   });
 
+  it("does not persist or inherit parent environment credentials (#744)", () => {
+    service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
+    const snapshot = service.createAgent({
+      name: "child",
+      personalConnection: { apiId: 98765, apiHash: "child-hash", phone: "+15551234567" },
+      acknowledgePersonalAccountAccess: true,
+    });
+    const previousPhone = process.env.TELETON_TG_PHONE;
+    const previousKey = process.env.TELETON_API_KEY;
+    process.env.TELETON_TG_PHONE = "+19990000000";
+    process.env.TELETON_API_KEY = "PARENT-ENV-SECRET";
+    try {
+      service.updateAgent(snapshot.id, { description: "updated" });
+      const yaml = readFileSync(snapshot.configPath, "utf8");
+      expect(yaml).toContain("+15551234567");
+      expect(yaml).not.toContain("PARENT-ENV-SECRET");
+      expect(managedAgentEnvironment().TELETON_TG_PHONE).toBeUndefined();
+      expect(managedAgentEnvironment().TELETON_API_KEY).toBeUndefined();
+    } finally {
+      if (previousPhone === undefined) delete process.env.TELETON_TG_PHONE;
+      else process.env.TELETON_TG_PHONE = previousPhone;
+      if (previousKey === undefined) delete process.env.TELETON_API_KEY;
+      else process.env.TELETON_API_KEY = previousKey;
+    }
+  });
   it("requires explicit consent for new personal-mode managed agents", () => {
     service = new ManagedAgentService({ rootDir, primaryConfigPath: configPath });
 

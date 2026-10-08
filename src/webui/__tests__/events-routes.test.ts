@@ -89,14 +89,17 @@ describe("events and webhooks routes", () => {
       method: "POST",
       body: JSON.stringify({
         url: "https://hooks.example.com/teleton",
-        events: ["external.github.push"],
+        events: ["webhook.incoming"],
         secret: "incoming-secret",
       }),
       headers: { "Content-Type": "application/json" },
     });
     const created = await createRes.json();
-    const raw = JSON.stringify({ type: "external.github.push", repository: "demo" });
-    const signature = createHmac("sha256", "incoming-secret").update(raw).digest("hex");
+    const raw = JSON.stringify({ type: "webhook.incoming", repository: "demo" });
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = createHmac("sha256", "incoming-secret")
+      .update(`inbound:${timestamp}.${raw}`)
+      .digest("hex");
 
     const incomingRes = await app.request(`/webhooks/incoming/${created.data.id}`, {
       method: "POST",
@@ -104,15 +107,16 @@ describe("events and webhooks routes", () => {
       headers: {
         "Content-Type": "application/json",
         "X-Webhook-Signature": `sha256=${signature}`,
+        "X-Webhook-Timestamp": timestamp,
       },
     });
     const incoming = await incomingRes.json();
 
     expect(incomingRes.status).toBe(202);
     expect(incoming.success).toBe(true);
-    expect(incoming.data.type).toBe("external.github.push");
+    expect(incoming.data.type).toBe("webhook.incoming");
 
-    const eventsRes = await app.request("/events?type=external.github.push");
+    const eventsRes = await app.request("/events?type=webhook.incoming");
     const events = await eventsRes.json();
     expect(events.data.events).toHaveLength(1);
     expect(events.data.events[0].payload.repository).toBe("demo");

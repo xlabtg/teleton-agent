@@ -68,6 +68,13 @@ export function splitTelegramHtml(
       }
 
       const splitAt = findTextSplit(value, available);
+      if (splitAt === 0) {
+        if (chunk.length === reopenTags().length) {
+          throw new RangeError("HTML formatting overhead leaves no room for a Unicode code point");
+        }
+        flush();
+        continue;
+      }
       chunk += value.slice(0, splitAt);
       value = value.slice(splitAt);
       flush();
@@ -132,5 +139,5 @@ function findTextSplit(text: string, available: number): number {
 
   const lastCodeUnit = text.charCodeAt(splitAt - 1);
   if (lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff) splitAt--;
-  return Math.max(splitAt, 1);
+  return Math.max(splitAt, 0);
 }

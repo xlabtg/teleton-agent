@@ -269,7 +269,11 @@ describe("registerMcpTools()", () => {
       mockContext
     );
 
-    expect(mockCallTool).toHaveBeenCalledWith({ name: "add", arguments: { a: 1, b: 2 } });
+    expect(mockCallTool).toHaveBeenCalledWith(
+      { name: "add", arguments: { a: 1, b: 2 } },
+      undefined,
+      expect.objectContaining({ timeout: 90_000, signal: expect.any(AbortSignal) })
+    );
     expect(result.success).toBe(true);
   });
 

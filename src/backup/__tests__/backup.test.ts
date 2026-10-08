@@ -316,3 +316,41 @@ describe("pre-upgrade backup hook", () => {
     );
   });
 });
+
+it("clears stale SQLite sidecars on restore (#746)", () => {
+  seedDataDir(root);
+  const backup = createBackup({ root, outDir: join(root, "backups") });
+  for (const suffix of ["-wal", "-shm", "-journal"])
+    writeFileSync(join(root, `memory.db${suffix}`), "stale");
+  restoreBackup({ root, archivePath: backup.archivePath, skipSafetyBackup: true });
+  for (const suffix of ["-wal", "-shm", "-journal"])
+    expect(existsSync(join(root, `memory.db${suffix}`))).toBe(false);
+  const db = new Database(join(root, "memory.db"));
+  expect(db.pragma("integrity_check", { simple: true })).toBe("ok");
+  db.close();
+});
+
+it("restores backup data instead of replaying real stale WAL frames (#746)", () => {
+  seedDataDir(root);
+  const backup = createBackup({ root, outDir: join(root, "backups") });
+  const path = join(root, "memory.db");
+  const live = new Database(path);
+  live.pragma("journal_mode = WAL");
+  live.pragma("wal_autocheckpoint = 0");
+  live.exec("UPDATE notes SET body = 'stale WAL data' WHERE id = 1");
+  const wal = readFileSync(`${path}-wal`);
+  const shm = readFileSync(`${path}-shm`);
+  expect(wal.length).toBeGreaterThan(32);
+  live.close();
+  writeFileSync(`${path}-wal`, wal);
+  writeFileSync(`${path}-shm`, shm);
+  restoreBackup({ root, archivePath: backup.archivePath, skipSafetyBackup: true });
+  const restored = new Database(path);
+  try {
+    expect(restored.prepare("SELECT body FROM notes WHERE id = 1").get()).toEqual({
+      body: "note-1",
+    });
+  } finally {
+    restored.close();
+  }
+});

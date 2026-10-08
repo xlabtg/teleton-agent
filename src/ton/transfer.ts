@@ -3,7 +3,7 @@ import { Address } from "@ton/core";
 import { getKeyPair, getCachedTonClient } from "./wallet-service.js";
 import { createLogger } from "../utils/logger.js";
 import { withTxLock } from "./tx-lock.js";
-import { sendWalletTx, type SentTx } from "./confirm.js";
+import { WalletTransferPendingError, sendWalletTx, type SentTx } from "./confirm.js";
 import { getAuditInstance, type FinancialAuditDetails } from "../services/audit.js";
 
 const log = createLogger("TON");
@@ -123,7 +123,7 @@ export async function sendTon(params: SendTonParams): Promise<SendTonResult | nu
         asset: "TON",
         recipient: toAddress,
         comment: comment || undefined,
-        status: "failed",
+        status: error instanceof WalletTransferPendingError ? "pending" : "failed",
         error: error instanceof Error ? error.message : String(error),
       });
 

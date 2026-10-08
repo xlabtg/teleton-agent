@@ -34,7 +34,7 @@ export interface FinancialAuditDetails {
   /** Pseudo-hash or transaction ID returned by the operation */
   txId?: string | null;
   /** "success" | "failed" */
-  status: "success" | "failed";
+  status: "success" | "failed" | "pending";
   error?: string;
 }
 

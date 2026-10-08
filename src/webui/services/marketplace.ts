@@ -6,7 +6,8 @@
  * any number of extra sources configured in config.marketplace.extra_sources.
  */
 
-import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, rmSync, renameSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { WORKSPACE_PATHS } from "../../workspace/paths.js";
@@ -32,7 +33,6 @@ const OFFICIAL_GITHUB_API_BASE =
 const OFFICIAL_LABEL = "Official";
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-const PLUGINS_DIR = WORKSPACE_PATHS.PLUGINS_DIR;
 const MAX_PLUGIN_FILE_BYTES = 2 * 1024 * 1024;
 
 const VALID_ID = /^[a-z0-9][a-z0-9-]*$/;
@@ -441,6 +441,13 @@ export class MarketplaceService {
   async installPlugin(
     pluginId: string
   ): Promise<{ name: string; version: string; toolCount: number }> {
+    return this.installOrUpdate(pluginId, false);
+  }
+
+  private async installOrUpdate(
+    pluginId: string,
+    updating: boolean
+  ): Promise<{ name: string; version: string; toolCount: number }> {
     this.validateId(pluginId);
 
     if (this.installing.has(pluginId)) {
@@ -449,12 +456,19 @@ export class MarketplaceService {
 
     // Check if already installed (resolve via registry name, not just ID)
     const existing = this.findModuleByPluginId(pluginId);
-    if (existing) {
+    if (existing && !updating) {
       throw new ConflictError(`Plugin "${pluginId}" is already installed`);
     }
 
+    if (updating && !existing) throw new Error(`Plugin "${pluginId}" is not installed`);
     this.installing.add(pluginId);
-    const pluginDir = join(PLUGINS_DIR, pluginId);
+    const targetDir = join(WORKSPACE_PATHS.PLUGINS_DIR, pluginId);
+    const pluginDir = join(WORKSPACE_PATHS.PLUGINS_DIR, `.${pluginId}-stage-${randomUUID()}`);
+    const backupDir = join(WORKSPACE_PATHS.PLUGINS_DIR, `.${pluginId}-backup-${randomUUID()}`);
+    let oldStopped = false;
+    let swapped = false;
+    let completed = false;
+    let candidate: (typeof this.deps.modules)[number] | undefined;
 
     try {
       // Find entry in registry (search all sources)
@@ -485,46 +499,84 @@ export class MarketplaceService {
       const mod = await import(moduleUrl);
 
       // Adapt plugin (validates manifest, tools, SDK version, etc.)
-      const adapted = adaptPlugin(
+      let adapted = adaptPlugin(
         mod,
         pluginId,
         this.deps.config,
-        this.deps.loadedModuleNames,
+        this.deps.loadedModuleNames.filter((name) => name !== existing?.name),
         this.deps.sdkDeps
       );
 
-      // Run migrations
-      adapted.migrate?.(this.deps.pluginContext.db);
+      candidate = adapted;
+      // Validate tools before touching the running version.
+      let tools = adapted.tools(this.deps.config);
+      if (existing) {
+        oldStopped = true;
+        await existing.stop?.();
+        this.deps.toolRegistry.removePluginTools(existing.name);
+      }
+      if (existsSync(targetDir)) renameSync(targetDir, backupDir);
+      renameSync(pluginDir, targetDir);
+      swapped = true;
+      // Import from the installed path so lazy imports and import.meta.url stay valid.
+      const installed = await import(
+        pathToFileURL(join(targetDir, "index.js")).href + `?t=${randomUUID()}`
+      );
+      adapted = adaptPlugin(
+        installed,
+        pluginId,
+        this.deps.config,
+        this.deps.loadedModuleNames.filter((name) => name !== existing?.name),
+        this.deps.sdkDeps
+      );
+      candidate = adapted;
+      tools = adapted.tools(this.deps.config);
+      // A failed migration cannot leave a partially applied schema.
+      this.deps.pluginContext.db.transaction(() => adapted.migrate?.(this.deps.pluginContext.db))();
 
       // Register tools
-      const tools = adapted.tools(this.deps.config);
       const toolCount = this.deps.toolRegistry.registerPluginTools(adapted.name, tools);
 
       // Start plugin
       await adapted.start?.(this.deps.pluginContext);
 
       // Add to modules array (shared reference)
-      this.deps.modules.push(adapted);
+      if (existing) this.deps.modules.splice(this.deps.modules.indexOf(existing), 1, adapted);
+      else this.deps.modules.push(adapted);
 
       // Re-wire plugin event hooks
       this.deps.rewireHooks();
 
+      completed = true;
       return {
         name: adapted.name,
         version: adapted.version,
         toolCount,
       };
     } catch (error: unknown) {
-      // Cleanup on failure
-      if (existsSync(pluginDir)) {
+      if (candidate && swapped) {
         try {
-          rmSync(pluginDir, { recursive: true, force: true });
-        } catch (cleanupErr: unknown) {
-          log.error({ error: cleanupErr }, `Failed to cleanup ${pluginDir}`);
+          await candidate.stop?.();
+        } catch (stopError) {
+          log.error({ err: stopError }, "Failed to stop rejected plugin");
         }
+        this.deps.toolRegistry.removePluginTools(candidate.name);
+        const idx = this.deps.modules.indexOf(candidate);
+        if (idx >= 0) this.deps.modules.splice(idx, 1);
+      }
+      if (swapped) rmSync(targetDir, { recursive: true, force: true });
+      if (existsSync(backupDir)) renameSync(backupDir, targetDir);
+      if (existing && oldStopped) {
+        if (!this.deps.modules.includes(existing)) this.deps.modules.push(existing);
+        this.deps.toolRegistry.registerPluginTools(existing.name, existing.tools(this.deps.config));
+        await existing.start?.(this.deps.pluginContext);
+        this.deps.rewireHooks();
       }
       throw error;
     } finally {
+      rmSync(pluginDir, { recursive: true, force: true });
+      // Preserve the backup if restoring the previous directory itself failed.
+      if (completed) rmSync(backupDir, { recursive: true, force: true });
       this.installing.delete(pluginId);
     }
   }
@@ -561,7 +613,7 @@ export class MarketplaceService {
       this.deps.rewireHooks();
 
       // Delete plugin directory (keep data DB)
-      const pluginDir = join(PLUGINS_DIR, pluginId);
+      const pluginDir = join(WORKSPACE_PATHS.PLUGINS_DIR, pluginId);
       if (existsSync(pluginDir)) {
         rmSync(pluginDir, { recursive: true, force: true });
       }
@@ -577,8 +629,7 @@ export class MarketplaceService {
   async updatePlugin(
     pluginId: string
   ): Promise<{ name: string; version: string; toolCount: number }> {
-    await this.uninstallPlugin(pluginId);
-    return this.installPlugin(pluginId);
+    return this.installOrUpdate(pluginId, true);
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -634,7 +685,7 @@ export class MarketplaceService {
       }
 
       const target = resolve(localDir, item.name);
-      if (!isPathWithin(PLUGINS_DIR, target)) {
+      if (!isPathWithin(WORKSPACE_PATHS.PLUGINS_DIR, target)) {
         throw new Error(`Path escape detected: ${target}`);
       }
 

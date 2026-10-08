@@ -1305,6 +1305,14 @@ ${blue}  ┌──────────────────────�
         ? this.adminHandler.isCommandAllowed(message.senderId, message.chatId)
         : false;
       if (adminCmd && commandAllowed) {
+        if (!this.adminHandler.isPrivilegedCommandAllowed(adminCmd.command, message.senderId)) {
+          await this.bridge.sendMessage({
+            chatId: message.chatId,
+            text: "⛔ Admin access required",
+            replyToId: message.id,
+          });
+          return;
+        }
         // /boot passes through to the agent with bootstrap instructions
         if (adminCmd.command === "boot") {
           const bootstrapContent = this.adminHandler.getBootstrapContent();
@@ -1339,7 +1347,7 @@ ${blue}  ┌──────────────────────�
             `- For simple operations (check a price, send a message), use a tool_call payload\n` +
             `- For complex multi-step tasks, use an agent_task payload with detailed instructions\n` +
             `- Always include a reason explaining why this task is being created\n\n` +
-            `Task: "${taskDescription}"`;
+            `Task: ${JSON.stringify(taskDescription)}`;
           // Fall through to handleMessage below
         } else {
           const response = await this.adminHandler.handleCommand(

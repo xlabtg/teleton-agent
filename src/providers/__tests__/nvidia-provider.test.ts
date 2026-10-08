@@ -76,7 +76,7 @@ describe("NVIDIA curated model catalog", () => {
 
     expect(models.length).toBeGreaterThan(0);
     expect(values).toContain("z-ai/glm-5.1");
-    expect(values).toContain("z-ai/glm-5-3");
+    expect(values).toContain("z-ai/glm-5.3");
     expect(values).toContain("deepseek-ai/deepseek-v4.1-flash");
     expect(values).toContain("moonshotai/kimi-k3");
   });

@@ -1,3 +1,5 @@
+import { readTransactionHistory } from "../ton/transaction-history.js";
+import { toUnits } from "../ton/units.js";
 import type Database from "better-sqlite3";
 import type {
   TonSDK,
@@ -36,7 +38,6 @@ import {
 import { sendTon } from "../ton/transfer.js";
 import { sendWalletTx } from "../ton/confirm.js";
 import { PAYMENT_TOLERANCE_RATIO } from "../constants/limits.js";
-import { withBlockchainRetry } from "../utils/retry.js";
 import { tonapiFetch, GECKOTERMINAL_API_URL } from "../constants/api-endpoints.js";
 import { fetchWithTimeout } from "../utils/fetch.js";
 import { createDexSDK } from "./ton-dex.js";
@@ -327,12 +328,11 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
         const addressObj = TonAddress.parse(address);
         const client = await getCachedTonClient();
 
-        const transactions = await withBlockchainRetry(
-          () =>
-            client.getTransactions(addressObj, {
-              limit: Math.min(limit ?? 10, 50),
-            }),
-          "sdk.ton.getTransactions"
+        const transactions = await readTransactionHistory(
+          client,
+          addressObj,
+          0,
+          Math.min(limit ?? 10, 200)
         );
 
         return formatTransactions(transactions);
@@ -380,7 +380,7 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
       cleanupOldTransactions(db, DEFAULT_TX_RETENTION_DAYS, log);
 
       try {
-        const txs = await this.getTransactions(address, 20);
+        const txs = await this.getTransactions(address, 200);
 
         for (const tx of txs) {
           if (tx.type !== "ton_received") continue;
@@ -559,9 +559,7 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
         const senderJettonWallet = (jettonBalance.wallet_address ?? { address: "" }).address;
         const decimals = jettonBalance.jetton.decimals ?? 9;
         const currentBalance = BigInt(jettonBalance.balance);
-        const amountStr = amount.toFixed(decimals);
-        const [whole, frac = ""] = amountStr.split(".");
-        const amountInUnits = BigInt(whole + (frac + "0".repeat(decimals)).slice(0, decimals));
+        const amountInUnits = toUnits(amount, decimals);
 
         if (amountInUnits > currentBalance) {
           const balStr = formatTokenBalance(currentBalance, decimals);
@@ -773,9 +771,7 @@ export function createTonSDK(log: PluginLogger, db: Database.Database | null): T
         const senderJettonWallet = (jettonBalance.wallet_address ?? { address: "" }).address;
         const decimals = jettonBalance.jetton.decimals ?? 9;
         const currentBalance = BigInt(jettonBalance.balance);
-        const amountStr = amount.toFixed(decimals);
-        const [whole, frac = ""] = amountStr.split(".");
-        const amountInUnits = BigInt(whole + (frac + "0".repeat(decimals)).slice(0, decimals));
+        const amountInUnits = toUnits(amount, decimals);
 
         if (amountInUnits > currentBalance) {
           const balStr = formatTokenBalance(currentBalance, decimals);

@@ -85,26 +85,43 @@ export class AdminHandler {
     return true;
   }
 
+  isPrivilegedCommandAllowed(command: string, userId: number): boolean {
+    return !["boot", "task"].includes(command) || this.isAdmin(userId);
+  }
+
   isPaused(): boolean {
     return this.paused;
   }
 
-  parseCommand(message: string): AdminCommand | null {
-    const trimmed = message.trim();
-    if (!trimmed.startsWith("/") && !trimmed.startsWith("!") && !trimmed.startsWith(".")) {
-      return null;
-    }
-
-    const parts = trimmed.split(/\s+/);
-    const command = parts[0].slice(1).toLowerCase();
-    const args = parts.slice(1);
-
-    return {
-      command,
-      args,
-      chatId: "",
-      senderId: 0,
-    };
+  parseCommand(message: string, botUsername = this.bridge.getUsername?.()): AdminCommand | null {
+    const match = message.trim().match(/^[/!.]([a-z][a-z0-9_]*)(?:@([a-z0-9_]+))?(?:\s|$)/i);
+    if (!match) return null;
+    if (match[2] && match[2].toLowerCase() !== botUsername?.toLowerCase()) return null;
+    const command = match[1].toLowerCase();
+    const known = new Set([
+      "status",
+      "clear",
+      "loop",
+      "model",
+      "policy",
+      "pause",
+      "resume",
+      "wallet",
+      "strategy",
+      "stop",
+      "verbose",
+      "rag",
+      "guest",
+      "modules",
+      "plugin",
+      "help",
+      "commands",
+      "ping",
+      "boot",
+      "task",
+    ]);
+    if (!known.has(command)) return null;
+    return { command, args: message.trim().split(/\s+/).slice(1), chatId: "", senderId: 0 };
   }
 
   async handleCommand(

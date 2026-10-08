@@ -325,7 +325,7 @@ describe("createTonSDK", () => {
 
     describe("getTransactions()", () => {
       it("returns formatted transactions", async () => {
-        const mockTxs = [{ hash: "abc", type: "ton_received" }];
+        const mockTxs = [{ hash: () => Buffer.from("abc"), now: 1000, lt: 1n }];
         const mockGetTx = vi.fn().mockResolvedValue(mockTxs);
         (getCachedTonClient as Mock).mockResolvedValue({ getTransactions: mockGetTx });
         mocks.formatTransactions.mockReturnValue(mockTxs);
@@ -334,7 +334,7 @@ describe("createTonSDK", () => {
         expect(result).toEqual(mockTxs);
       });
 
-      it("caps limit at 50", async () => {
+      it("pages with a maximum batch of 20", async () => {
         const mockGetTx = vi.fn().mockResolvedValue([]);
         (getCachedTonClient as Mock).mockResolvedValue({ getTransactions: mockGetTx });
         mocks.formatTransactions.mockReturnValue([]);
@@ -342,7 +342,7 @@ describe("createTonSDK", () => {
         await sdk.getTransactions(VALID_ADDRESS, 999);
         expect(mockGetTx).toHaveBeenCalledWith(
           expect.anything(),
-          expect.objectContaining({ limit: 50 })
+          expect.objectContaining({ limit: 20 })
         );
       });
 

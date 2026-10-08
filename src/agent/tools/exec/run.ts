@@ -58,6 +58,7 @@ export function createExecRunExecutor(
     const useShell = execConfig.mode !== "allowlist";
     const result = await runCommand(command, {
       timeout: timeout * 1000,
+      signal: context.signal,
       maxOutput: max_output,
       useShell,
       sandboxMode: execConfig.sandbox_mode,

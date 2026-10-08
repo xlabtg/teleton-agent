@@ -212,6 +212,7 @@ export interface ProcessMessageOptions {
 
 export interface AgentResponse {
   content: string;
+  error?: string;
   toolCalls?: Array<{
     name: string;
     input: Record<string, unknown>;
@@ -1552,6 +1553,7 @@ export class AgentRuntime {
         log.error("⚠️ Agentic loop exited early without final response");
         return {
           content: "Internal error: Agent loop failed to produce a response.",
+          error: "Agent loop failed to produce a response.",
           toolCalls: [],
         };
       }

@@ -24,6 +24,25 @@ describe("GrammyBotBridge long HTML messages", () => {
     guestHandler = undefined;
   });
 
+  it.each([
+    ["/help@other_bot", "bot_command", false],
+    ["/help@my_bot", "bot_command", true],
+    ["/help@MY_BOT", "bot_command", true],
+    ["/help", "bot_command", true],
+    ["@my_bot_suffix", undefined, false],
+    ["@MY_BOT!", undefined, true],
+  ])("checks exact command/mention target %s (#764)", (text, type, expected) => {
+    const bridge = new GrammyBotBridge({ bot_token: "test" });
+    Object.assign(bridge, { botInfo: { id: 1, username: "my_bot" } });
+    const parsed = bridge.parseMessage({
+      message_id: 1,
+      date: 1,
+      chat: { id: 123, type: "group" },
+      text,
+      entities: type ? [{ type, offset: 0, length: text.length }] : undefined,
+    } as never);
+    expect(parsed.mentionsMe).toBe(expected);
+  });
   it("sends balanced chunks when formatting spans the Telegram limit", async () => {
     const bridge = new GrammyBotBridge({ bot_token: "test" });
 

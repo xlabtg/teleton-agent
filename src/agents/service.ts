@@ -13,7 +13,7 @@ import {
 import type { WriteStream } from "node:fs";
 import { join } from "node:path";
 import type { Readable } from "node:stream";
-import { loadConfig, saveConfig } from "../config/loader.js";
+import { readConfigFile, saveConfig } from "../config/loader.js";
 import type { Config } from "../config/schema.js";
 import { TELETON_ROOT } from "../workspace/paths.js";
 import { loadTemplate } from "../workspace/manager.js";
@@ -337,7 +337,7 @@ export class ManagedAgentService {
     const sourceConfigPath = sourceDefinition?.configPath ?? this.primaryConfigPath;
     const sourceRoot = sourceDefinition?.homePath ?? this.rootDir;
     const mode: ManagedAgentMode = input.mode ?? sourceDefinition?.mode ?? "personal";
-    const sourceConfig = loadConfig(sourceConfigPath);
+    const sourceConfig = readConfigFile(sourceConfigPath);
     const { type, archetype } = resolveRegistryType(input, sourceDefinition);
     const typeProvided = Boolean(input.type?.trim());
     const description =
@@ -490,7 +490,7 @@ export class ManagedAgentService {
   startAgent(id: string): ManagedAgentRuntimeStatus {
     const definition = this.readDefinition(id);
     const record = this.ensureProcessRecord(id);
-    const config = loadConfig(definition.configPath);
+    const config = readConfigFile(definition.configPath);
     const botToken =
       definition.mode === "bot" ? this.resolveBotToken(definition, config) : undefined;
 
@@ -527,7 +527,7 @@ export class ManagedAgentService {
     const logStream = createWriteStream(definition.logPath, { flags: "a" });
     const command = this.resolveCommand(definition.configPath);
     const childEnv: NodeJS.ProcessEnv = {
-      ...process.env,
+      ...managedAgentEnvironment(),
       TELETON_HOME: definition.homePath,
       TELETON_WEBUI_ENABLED: "false",
       TELETON_API_ENABLED: "false",
@@ -807,7 +807,7 @@ export class ManagedAgentService {
       );
     }
 
-    const config = loadConfig(definition.configPath);
+    const config = readConfigFile(definition.configPath);
     this.applyResourcePolicyToConfig(config, nextDefinition.resources);
     this.applyRegistryConfigToConfig(config, registryConfig, soulTemplate);
     let nextBotToken: string | undefined;
@@ -1012,7 +1012,7 @@ export class ManagedAgentService {
       );
     }
 
-    const config = loadConfig(definition.configPath);
+    const config = readConfigFile(definition.configPath);
     const overrides = normalizePersonalConnection(input);
     const personalConnectionChanged = this.applyPersonalConnectionToConfig(config, overrides);
     this.validatePersonalConnectionConfig(config);
@@ -1080,7 +1080,7 @@ export class ManagedAgentService {
   }
 
   private toSnapshot(definition: ManagedAgentDefinition): ManagedAgentSnapshot {
-    const config = loadConfig(definition.configPath);
+    const config = readConfigFile(definition.configPath);
     const status = this.getRuntimeStatus(definition.id);
     return {
       ...definition,
@@ -1278,13 +1278,8 @@ export class ManagedAgentService {
   }
 
   private buildNodeOptions(resources: ManagedAgentResourcePolicy): string {
-    const existing = process.env.NODE_OPTIONS?.trim();
-    if (existing?.includes("--max-old-space-size")) {
-      return existing;
-    }
-
     const memoryMb = Math.max(64, Math.floor(resources.maxMemoryMb));
-    return [existing, `--max-old-space-size=${memoryMb}`].filter(Boolean).join(" ");
+    return `--max-old-space-size=${memoryMb}`;
   }
 
   private credentialsPath(definition: ManagedAgentDefinition): string {
@@ -1557,4 +1552,26 @@ export class ManagedAgentService {
       args: [...process.execArgv, scriptPath, "start", "-c", configPath],
     };
   }
+}
+
+/** Keep host runtime settings, but never inherit application/provider credentials. */
+export function managedAgentEnvironment(): NodeJS.ProcessEnv {
+  const allowed = [
+    "PATH",
+    "HOME",
+    "USER",
+    "LOGNAME",
+    "SHELL",
+    "LANG",
+    "LC_ALL",
+    "TZ",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    "SYSTEMROOT",
+    "WINDIR",
+  ];
+  return Object.fromEntries(
+    allowed.filter((key) => process.env[key] !== undefined).map((key) => [key, process.env[key]])
+  );
 }

@@ -11,6 +11,7 @@ const KILL_GRACE_MS = 5000;
 export function runCommand(command: string, options: RunOptions): Promise<ExecResult> {
   const { timeout, maxOutput, useShell = true, argv, sandboxMode = "unrestricted" } = options;
   const startTime = Date.now();
+  options.signal?.throwIfAborted();
 
   return new Promise((resolve) => {
     if (sandboxMode === "dry-run") {
@@ -56,6 +57,9 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
       resolved = true;
       clearTimeout(timeoutTimer);
       clearTimeout(killTimer);
+      // The shell may close while detached descendants still ignore SIGTERM.
+      if (timedOut && child.pid) killProcessGroup(child.pid, "SIGKILL");
+      options.signal?.removeEventListener("abort", abort);
       sandbox.cleanup();
       resolve({
         stdout,
@@ -104,7 +108,8 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
 
     // Timeout handling: SIGTERM then SIGKILL
     let killTimer: ReturnType<typeof setTimeout>;
-    const timeoutTimer = setTimeout(() => {
+    const abort = () => {
+      if (timedOut || resolved) return;
       timedOut = true;
       log.warn({ command, timeout }, "Command timed out, sending SIGTERM");
       if (child.pid) killProcessGroup(child.pid, "SIGTERM");
@@ -113,7 +118,10 @@ export function runCommand(command: string, options: RunOptions): Promise<ExecRe
         log.warn({ command }, "Grace period expired, sending SIGKILL");
         if (child.pid) killProcessGroup(child.pid, "SIGKILL");
       }, KILL_GRACE_MS);
-    }, timeout);
+    };
+    const timeoutTimer = setTimeout(abort, timeout);
+    options.signal?.addEventListener("abort", abort, { once: true });
+    if (options.signal?.aborted) abort();
   });
 }
 

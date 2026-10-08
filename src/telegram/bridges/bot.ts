@@ -416,14 +416,22 @@ export class GrammyBotBridge implements ITelegramBridge {
             break;
           }
         } else if (entity.type === "bot_command") {
-          mentionsMe = true;
-          break;
+          const command = (msg.text || "").slice(entity.offset, entity.offset + entity.length);
+          const target = command.split("@")[1];
+          if (!target || target.toLowerCase() === botUsername) {
+            mentionsMe = true;
+            break;
+          }
         }
       }
     }
 
     // Also check text for @botUsername without entity (some clients)
-    if (!mentionsMe && botUsername && (msg.text || "").toLowerCase().includes(`@${botUsername}`)) {
+    if (
+      !mentionsMe &&
+      botUsername &&
+      new RegExp(`@${botUsername}(?![a-z0-9_])`, "i").test(msg.text || "")
+    ) {
       mentionsMe = true;
     }
 

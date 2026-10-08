@@ -460,7 +460,10 @@ describe("ToolRegistry", () => {
       const result = await registry.execute(toolCall, mockContext);
 
       expect(result).toEqual(mockResult);
-      expect(executor).toHaveBeenCalledWith({ message: "hello" }, mockContext);
+      expect(executor).toHaveBeenCalledWith(
+        { message: "hello" },
+        expect.objectContaining({ ...mockContext, signal: expect.any(AbortSignal) })
+      );
     });
 
     it("should return error for non-existent tool", async () => {
@@ -596,12 +599,42 @@ describe("ToolRegistry", () => {
       expect(result.error).toBe("Execution failed");
     });
 
+    it("honors exec-owned deadlines above 90 seconds (#758)", async () => {
+      vi.useFakeTimers();
+      try {
+        let finished = false;
+        registry.register(createMockTool("exec_run"), async () => {
+          await new Promise((resolve) => setTimeout(resolve, 100_000));
+          finished = true;
+          return { success: true, data: { exitCode: 0 } };
+        });
+        let settled = false;
+        const promise = registry
+          .execute({ type: "toolCall", id: "exec", name: "exec_run", arguments: {} }, mockContext)
+          .then((result) => {
+            settled = true;
+            return result;
+          });
+        await vi.advanceTimersByTimeAsync(90_000);
+        expect(settled).toBe(false);
+        await vi.advanceTimersByTimeAsync(10_000);
+        expect(await promise).toMatchObject({ success: true });
+        expect(finished).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("should timeout long-running tools", async () => {
       vi.useFakeTimers();
 
       const tool = createMockTool("slow_tool");
-      const executor = vi.fn(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 100_000));
+      const executor = vi.fn(async (_args, context: ToolContext) => {
+        await new Promise((_resolve, reject) =>
+          context.signal!.addEventListener("abort", () => reject(context.signal!.reason), {
+            once: true,
+          })
+        );
         return { success: true };
       });
 

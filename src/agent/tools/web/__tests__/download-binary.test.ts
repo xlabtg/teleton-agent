@@ -1,3 +1,7 @@
+const dnsMocks = vi.hoisted(() => ({
+  lookup: vi.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]),
+}));
+vi.mock("node:dns/promises", () => dnsMocks);
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -40,6 +44,7 @@ describe("webDownloadBinaryExecutor", () => {
   beforeEach(async () => {
     vi.resetModules();
     fetchMock.mockReset();
+    dnsMocks.lookup.mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
     vi.stubGlobal("fetch", fetchMock);
 
     originalTeletonHome = process.env.TELETON_HOME;
@@ -60,6 +65,55 @@ describe("webDownloadBinaryExecutor", () => {
     rmSync(tempHome, { recursive: true, force: true });
   });
 
+  it.each(["[::1]", "[::ffff:7f00:1]", "[fd00::1]", "[fe80::1]", "[64:ff9b::7f00:1]"])(
+    "blocks IPv6 %s before fetching (#743)",
+    async (host) => {
+      const result = await webDownloadBinaryExecutor(
+        { url: `http://${host}/a.png` },
+        makeContext()
+      );
+      expect(result.success).toBe(false);
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  );
+  it("blocks a redirect to localhost before fetching the second hop (#743)", async () => {
+    fetchMock.mockResolvedValue(
+      new Response(null, { status: 302, headers: { location: "http://127.0.0.1/a.png" } })
+    );
+    const result = await webDownloadBinaryExecutor(
+      { url: "https://example.com/a.png" },
+      makeContext()
+    );
+    expect(result.success).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+  it("rejects a hostname resolving to a private address (#743)", async () => {
+    dnsMocks.lookup.mockResolvedValue([{ address: "10.0.0.1", family: 4 }]);
+    const result = await webDownloadBinaryExecutor(
+      { url: "https://example.com/a.png" },
+      makeContext()
+    );
+    expect(result.success).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("drops credentials on cross-origin redirect and pins each hop (#743)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(null, { status: 302, headers: { location: "https://other.example/a.png" } })
+      )
+      .mockResolvedValueOnce(makeResponse("ok", { "content-type": "image/png" }));
+    const result = await webDownloadBinaryExecutor(
+      {
+        url: "https://example.com/a.png",
+        headers: { Authorization: "Bearer private", Cookie: "session=private" },
+      },
+      makeContext()
+    );
+    expect(result.success).toBe(true);
+    expect(fetchMock.mock.calls[1][1].headers).toBeUndefined();
+    expect(fetchMock.mock.calls[0][1].dispatcher).toBeDefined();
+    expect(fetchMock.mock.calls[1][1].dispatcher).toBeDefined();
+  });
   it("downloads binary content to workspace downloads with an extension inferred from MIME type", async () => {
     const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xdb]);
     fetchMock.mockResolvedValue(
@@ -122,7 +176,7 @@ describe("webDownloadBinaryExecutor", () => {
           Authorization: "Bearer token",
           Accept: "application/pdf",
         }),
-        redirect: "follow",
+        redirect: "manual",
       })
     );
   });
@@ -134,7 +188,7 @@ describe("webDownloadBinaryExecutor", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.error).toMatch(/Blocked URL scheme/);
+    expect(result.error).toMatch(/must use http/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

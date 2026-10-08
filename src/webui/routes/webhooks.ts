@@ -73,9 +73,14 @@ export function createWebhooksRoutes(deps: WebUIServerDeps) {
     try {
       const id = c.req.param("id");
       const raw = await c.req.text();
-      dispatcher().verifyIncomingSignature(id, raw, c.req.header("X-Webhook-Signature") ?? null);
+      dispatcher().verifyIncomingSignature(
+        id,
+        raw,
+        c.req.header("X-Webhook-Signature") ?? null,
+        c.req.header("X-Webhook-Timestamp") ?? null
+      );
       const payload = safeParseJson(raw);
-      const eventType = typeof payload.type === "string" ? payload.type : "webhook.incoming";
+      const eventType = "webhook.incoming";
       const event = await getEventBus(deps.memory.db).publish({
         type: eventType,
         source: `webhook:${id}`,

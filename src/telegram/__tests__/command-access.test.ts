@@ -82,6 +82,18 @@ function makeHandler(
   return new AdminHandler(bridge, config, agent);
 }
 
+describe("privileged prompt access (#750)", () => {
+  it.each(["boot", "task"])(
+    "does not expose %s prompt to users allowed ordinary commands",
+    (command) => {
+      const handler = makeHandler({ admin_only_commands: false });
+      expect(handler.isCommandAllowed(200, "42")).toBe(true);
+      expect(handler.isPrivilegedCommandAllowed(command, 200)).toBe(false);
+      expect(handler.isPrivilegedCommandAllowed(command, 100)).toBe(true);
+    }
+  );
+});
+
 // ── isCommandAllowed tests ─────────────────────────────────────────────
 
 describe("AdminHandler.isCommandAllowed", () => {
@@ -370,5 +382,19 @@ describe("AdminHandler.handleCommand — /commands", () => {
       999
     );
     expect(result).toContain("Admin access required");
+  });
+});
+
+describe("known commands and bot suffix (#747, #760)", () => {
+  it.each(["...hi", "!question", ".NET", "/unrecognized"])(
+    "passes normal text %s through",
+    (text) => {
+      expect(makeHandler().parseCommand(text)).toBeNull();
+    }
+  );
+  it("accepts own bot suffix and ignores another bot", () => {
+    const handler = makeHandler();
+    expect(handler.parseCommand("/status@MyBot", "mybot")?.command).toBe("status");
+    expect(handler.parseCommand("/status@other", "mybot")).toBeNull();
   });
 });

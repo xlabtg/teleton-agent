@@ -15,7 +15,7 @@ Only the latest minor release receives security patches. We recommend always run
 
 Instead, please report vulnerabilities through one of these channels:
 
-- **GitHub Security Advisories**: [Report a vulnerability](https://github.com/TONresistor/teleton-agent/security/advisories/new)
+- **GitHub Security Advisories**: [Report a vulnerability](https://github.com/xlabtg/teleton-agent/security/advisories/new)
 - **Telegram**: dm t.me/zkproof
 
 ### What to Expect

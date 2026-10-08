@@ -152,7 +152,7 @@ export function isNvidiaGlm51EmptyResponse(input: EmptyResponseDiagnosticInput):
   return (
     isEmptyResponseWithoutUsage(input) &&
     input.provider.toLowerCase() === "nvidia" &&
-    input.model.toLowerCase() === "z-ai/glm-5.1"
+    /^z-ai\/glm-5(?:[.-]|$)/i.test(input.model)
   );
 }
 
@@ -160,7 +160,7 @@ export function getEmptyResponseRecoveryPrompt(input: EmptyResponseDiagnosticInp
   if (!isNvidiaGlm51EmptyResponse(input)) return null;
 
   return (
-    "Provider recovery: the previous NVIDIA GLM-5.1 streaming response was empty " +
+    `Provider recovery: the previous NVIDIA ${input.model.split("/").pop()?.toUpperCase()} streaming response was empty ` +
     "and reported zero token usage. Continue the same user request with the native tools " +
     "already available in this request. Return either the next tool call(s) needed to make " +
     "progress or a concise final answer; do not return an empty message."
@@ -172,11 +172,11 @@ export function getEmptyResponseDiagnostic(input: EmptyResponseDiagnosticInput):
 
   if (isNvidiaGlm51EmptyResponse(input)) {
     return (
-      "NVIDIA NIM z-ai/glm-5.1 returned an empty streaming response with zero token usage. " +
+      `NVIDIA NIM ${input.model} returned an empty streaming response with zero token usage. ` +
       "Teleton sends this model through NVIDIA's OpenAI-compatible Chat Completions endpoint " +
       "with native tools enabled. If the same model works in the NVIDIA web UI but not through " +
       "the API, verify that the nvapi key's organization has Public API Endpoints access and " +
-      "that z-ai/glm-5.1 is available for that key."
+      `that ${input.model} is available for that key.`
     );
   }
 

@@ -97,3 +97,17 @@ describe("splitMessageForTelegram", () => {
     }
   });
 });
+
+it.each([1, 2, 10, 4096])("preserves Unicode code points at limit %s (#765)", (limit) => {
+  const text = "a" + "😀".repeat(2100);
+  const parts = splitMessageForTelegram(text, limit);
+  expect(parts.join("")).toBe(text);
+  for (const part of parts) {
+    expect(part.isWellFormed()).toBe(true);
+    expect(part.length).toBeLessThanOrEqual(Math.max(2, limit));
+  }
+});
+
+it("retains the requested one-unit limit for ordinary characters", () => {
+  expect(splitMessageForTelegram("abc", 1)).toEqual(["a", "b", "c"]);
+});

@@ -19,7 +19,9 @@ function makeDeps() {
   ensurePipelineTables(db);
   return {
     memory: { db },
+    bridge: {},
     agent: {
+      getConfig: vi.fn(() => ({ telegram: { admin_ids: [123] } })),
       processMessage: vi.fn().mockResolvedValue({ content: "done" }),
     },
   } as unknown as WebUIServerDeps;

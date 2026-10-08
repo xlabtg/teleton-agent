@@ -15,6 +15,22 @@ describe("AuditTrailService", () => {
     db.close();
   });
 
+  it("preserves integrity and detects first-row tampering after pruning (#754)", () => {
+    db.pragma("foreign_keys = ON");
+    const first = service.recordEvent({ eventType: "config.changed", createdAt: 1000 });
+    service.recordEvent({ eventType: "config.changed", createdAt: 2000, parentEventId: first.id });
+    service.recordEvent({ eventType: "config.changed", createdAt: 3000 });
+    expect(service.pruneBefore(1500)).toBe(1);
+    expect(service.verifyIntegrity().valid).toBe(true);
+    db.prepare("UPDATE audit_events SET payload = '{}' || ' ' WHERE sequence = 2").run();
+    expect(service.verifyIntegrity().valid).toBe(false);
+  });
+  it("continues the chain after pruning everything (#754)", () => {
+    service.recordEvent({ eventType: "config.changed", createdAt: 1000 });
+    service.pruneBefore(1500);
+    expect(service.recordEvent({ eventType: "config.changed", createdAt: 2000 }).sequence).toBe(2);
+    expect(service.verifyIntegrity().valid).toBe(true);
+  });
   it("records tamper-evident events with parent links", () => {
     const root = service.recordEvent({
       eventType: "session.lifecycle",

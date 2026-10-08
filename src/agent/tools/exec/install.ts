@@ -94,6 +94,7 @@ export function createExecInstallExecutor(
 
     const result = await runCommand(command, {
       timeout: timeout * 1000,
+      signal: context.signal,
       maxOutput: max_output,
       useShell: false,
       argv,

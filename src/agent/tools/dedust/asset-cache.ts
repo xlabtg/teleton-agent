@@ -69,17 +69,4 @@ export async function getDecimals(addressOrTon: string): Promise<number> {
   return asset?.decimals ?? 9;
 }
 
-/**
- * Convert amount to on-chain units. Uses string manipulation to avoid floating-point precision loss.
- */
-export function toUnits(amount: number, decimals: number): bigint {
-  const str = amount.toFixed(decimals);
-  const [whole, frac = ""] = str.split(".");
-  const padded = frac.padEnd(decimals, "0").slice(0, decimals);
-  return BigInt(whole + padded);
-}
-
-export function fromUnits(units: bigint, decimals: number): number {
-  const factor = 10 ** decimals;
-  return Number(units) / factor;
-}
+export { toUnits, fromUnits } from "../../../ton/units.js";

@@ -3,7 +3,11 @@ import type { Tool, ToolExecutor, ToolResult } from "../types.js";
 import { loadDealForActor } from "./load-deal.js";
 import { verifyPayment } from "../../../ton/payment-verifier.js";
 import { GiftDetector } from "../../../deals/gift-detector.js";
-import { verifyGiftPayment } from "../../../deals/gift-matcher.js";
+import {
+  verifyGiftPayment,
+  isGiftPaymentUsed,
+  claimGiftPayment,
+} from "../../../deals/gift-matcher.js";
 import { getWalletAddress } from "../../../ton/wallet-service.js";
 import { autoExecuteAfterVerification } from "../../../deals/executor.js";
 import { getErrorMessage } from "../../../utils/errors.js";
@@ -175,7 +179,9 @@ export const dealVerifyPaymentExecutor: ToolExecutor<DealVerifyPaymentParams> = 
 
       // Find gift matching the expected slug from the deal's user.
       // Timestamps are compared in milliseconds (see verifyGiftPayment).
-      const { gift: matchingGift } = verifyGiftPayment(deal, newGifts);
+      const { gift: matchingGift } = verifyGiftPayment(deal, newGifts, (msgId) =>
+        isGiftPaymentUsed(context.db, msgId)
+      );
 
       if (!matchingGift) {
         return {
@@ -185,17 +191,9 @@ export const dealVerifyPaymentExecutor: ToolExecutor<DealVerifyPaymentParams> = 
       }
 
       // Update deal: store gift msgId, mark as verified (atomic: only if still accepted)
-      const giftVerifyResult = context.db
-        .prepare(
-          `UPDATE deals SET
-            status = 'verified',
-            user_payment_gift_msgid = ?,
-            user_payment_verified_at = unixepoch()
-          WHERE id = ? AND status = 'accepted'`
-        )
-        .run(matchingGift.msgId, params.dealId);
+      const claimed = claimGiftPayment(context.db, params.dealId, matchingGift.msgId, "accepted");
 
-      if (giftVerifyResult.changes !== 1) {
+      if (!claimed) {
         return {
           success: false,
           error: `Deal #${params.dealId} already transitioned by another process (expected 'accepted')`,
