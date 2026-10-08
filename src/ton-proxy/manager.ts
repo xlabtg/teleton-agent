@@ -15,6 +15,7 @@ import {
   unlinkSync,
 } from "fs";
 import { mkdir, unlink as unlinkAsync } from "fs/promises";
+import { createServer } from "node:net";
 import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { pipeline } from "stream/promises";
@@ -185,49 +186,17 @@ export class TonProxyManager {
     log.info(`TON Proxy installed: ${dest} (${tag}) — checksum OK`);
   }
 
-  /** Kill any orphan proxy process from a previous session */
+  /** Refuse occupied ports; a stale PID is never proof of process ownership. */
   private killOrphan(): void {
-    // Check PID file first
-    if (existsSync(PID_FILE)) {
-      try {
-        const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10);
-        if (pid && !isNaN(pid)) {
-          try {
-            process.kill(pid, 0); // check if alive
-            log.warn(`Killing orphan TON Proxy (PID ${pid}) from previous session`);
-            process.kill(pid, "SIGTERM");
-          } catch {
-            // Process already dead — clean up stale PID file
-          }
-        }
-        unlinkSync(PID_FILE);
-      } catch {
-        // PID file read/parse error — ignore
-      }
-    }
-
-    // Also check if port is in use (belt & suspenders)
-    try {
-      const result = spawnSync("ss", ["-tlnp"], {
-        encoding: "utf-8",
-        timeout: 3000,
-      });
-      const out = result.status === 0 ? result.stdout : "";
-      const portLine = out.split("\n").find((line) => line.includes(`:${this.config.port} `));
-      const pidMatch = portLine?.match(/pid=(\d+)/);
-      if (pidMatch) {
-        const pid = parseInt(pidMatch[1], 10);
-        log.warn(`Port ${this.config.port} occupied by PID ${pid}, killing it`);
-        try {
-          process.kill(pid, "SIGTERM");
-        } catch {
-          // Already dead
-        }
-        // Give it a moment to release the port
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
-      }
-    } catch {
-      // ss not available or other error — skip
+    this.removePidFile();
+    const result = spawnSync("ss", ["-H", "-ltn", `sport = :${this.config.port}`], {
+      encoding: "utf-8",
+      timeout: 3000,
+    });
+    if (result.status === 0 && result.stdout.trim()) {
+      throw new Error(
+        `TON Proxy port ${this.config.port} is in use; stop its owner before starting the proxy`
+      );
     }
   }
 
@@ -260,8 +229,19 @@ export class TonProxyManager {
     this.restartCount = 0;
     this.maxRestarts = 3;
 
-    // Kill any orphan process from a previous session
+    // Do not trust stale PID files or signal unrelated processes.
     this.killOrphan();
+    await new Promise<void>((resolve, reject) => {
+      const probe = createServer();
+      probe.once("error", (error) =>
+        reject(
+          new Error(`TON Proxy port ${this.config.port} is unavailable/in use`, { cause: error })
+        )
+      );
+      probe.listen(this.config.port, "127.0.0.1", () =>
+        probe.close((error) => (error ? reject(error) : resolve()))
+      );
+    });
 
     if (!this.isInstalled()) {
       await this.install();

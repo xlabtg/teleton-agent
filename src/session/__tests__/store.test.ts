@@ -16,6 +16,7 @@ const {
   getOrCreateSession,
   updateSession,
   getSession,
+  resetSession,
   saveSessionStore,
   loadSessionStore,
   pruneOldSessions,
@@ -35,6 +36,14 @@ describe("Session Store", () => {
     vi.useRealTimers();
   });
 
+  it("resets usage for a new session (#763)", () => {
+    const old = getOrCreateSession("123");
+    updateSession("123", { inputTokens: 5000, outputTokens: 800, contextTokens: 6000 });
+    const reset = resetSession("123");
+    expect(reset.sessionId).not.toBe(old.sessionId);
+    expect(getSession("123")).toMatchObject({ inputTokens: 0, outputTokens: 0 });
+    expect(getSession("123")?.contextTokens).toBeUndefined();
+  });
   // ============================================
   // TOKEN USAGE PERSISTENCE
   // ============================================

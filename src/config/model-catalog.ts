@@ -4,6 +4,8 @@
  * Models must exist in pi-ai's registry (or be entered as custom).
  */
 
+import { getSupportedProviders } from "./providers.js";
+
 export interface ModelOption {
   value: string;
   name: string;
@@ -495,12 +497,12 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
       description: "Default NVIDIA hosted agentic chat model with native tool calling",
     },
     {
-      value: "z-ai/glm-5-3",
+      value: "z-ai/glm-5.3",
       name: "GLM-5.3",
       description: "NVIDIA hosted agentic chat model with native tool calling",
     },
     {
-      value: "z-ai/glm-5-3-flash",
+      value: "z-ai/glm-5.3-flash",
       name: "GLM-5.3-flash",
       description: "NVIDIA hosted agentic chat model with native tool calling",
     },
@@ -525,6 +527,16 @@ export const MODEL_OPTIONS: Record<string, ModelOption[]> = {
 };
 
 /** Get models for a provider (codex → openai-codex) */
+// Keep configured models selectable when curated lists are refreshed.
+for (const provider of getSupportedProviders()) {
+  const models = MODEL_OPTIONS[provider.id] ?? (MODEL_OPTIONS[provider.id] = []);
+  for (const id of new Set([provider.defaultModel, provider.utilityModel])) {
+    if (!models.some((model) => model.value === id)) {
+      models.push({ value: id, name: id, description: "Configured default or utility model" });
+    }
+  }
+}
+
 export function getModelsForProvider(provider: string): ModelOption[] {
   const key = provider === "codex" ? "openai-codex" : provider;
   return MODEL_OPTIONS[key] || [];

@@ -38,6 +38,24 @@ describe("PipelineExecutor", () => {
     vi.useRealTimers();
   });
 
+  it("provides primary tool context and fails internal-error output (#757)", async () => {
+    const toolContext = { bridge: {}, db: {}, chatId: "pipeline", senderId: 100, isGroup: false };
+    const processMessage = vi
+      .fn()
+      .mockResolvedValue({ content: "Internal error: Agent loop failed to produce a response." });
+    const pipeline = store.create({
+      name: "tools",
+      steps: [{ id: "one", agent: "primary", action: "balance", output: "balance" }],
+    });
+    const executor = new PipelineExecutor({
+      store,
+      agent: { processMessage } as any,
+      toolContext: toolContext as any,
+    });
+    const result = await executor.execute(pipeline);
+    expect(processMessage.mock.calls[0][0].toolContext).toMatchObject({ senderId: 100 });
+    expect(result.run.status).toBe("failed");
+  });
   it("passes one step output into dependent step variables", async () => {
     const processMessage = vi
       .fn()

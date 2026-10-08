@@ -281,21 +281,25 @@ export class ToolRegistry {
         }
       }
 
-      let timeoutHandle: ReturnType<typeof setTimeout>;
-      const result = await Promise.race([
-        registered.executor(validatedArgs, context),
-        new Promise<never>((_, reject) => {
-          timeoutHandle = setTimeout(
-            () =>
-              reject(
-                new Error(
-                  `Tool "${toolCall.name}" timed out after ${TOOL_EXECUTION_TIMEOUT_MS / 1000}s`
-                )
-              ),
+      // Exec owns its process deadline and waits for process-group termination.
+      // Other tools receive a cooperative deadline; await settlement so side effects
+      // are never abandoned by Promise.race.
+      const controller = new AbortController();
+      const signal = context.signal
+        ? AbortSignal.any([context.signal, controller.signal])
+        : controller.signal;
+      const timeoutHandle = toolCall.name.startsWith("exec_")
+        ? undefined
+        : setTimeout(
+            () => controller.abort(new Error(`Tool "${toolCall.name}" timed out`)),
             TOOL_EXECUTION_TIMEOUT_MS
           );
-        }),
-      ]).finally(() => clearTimeout(timeoutHandle));
+      let result: ToolResult;
+      try {
+        result = await registered.executor(validatedArgs, { ...context, signal });
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
 
       return result;
     } catch (error) {

@@ -13,6 +13,7 @@ export function splitMessageForTelegram(
   text: string,
   maxLength: number = TELEGRAM_MAX_MESSAGE_LENGTH
 ): string[] {
+  if (!Number.isInteger(maxLength) || maxLength < 1) throw new Error("Invalid message length");
   if (text.length <= maxLength) {
     return [text];
   }
@@ -23,7 +24,10 @@ export function splitMessageForTelegram(
     // Try to find a split point that doesn't break a code block.
     // First check if we're inside a code block at position maxLength.
     const chunk = text.slice(0, maxLength);
-    const splitIndex = findSafeSplitIndex(chunk, maxLength);
+    // A code point is indivisible even when maxLength=1; other characters keep that limit.
+    const splitIndex =
+      findSafeSplitIndex(chunk, maxLength) ||
+      (text.charCodeAt(1) >= 0xdc00 && text.charCodeAt(1) <= 0xdfff ? 2 : 1);
 
     parts.push(text.slice(0, splitIndex).trimEnd());
     text = text.slice(splitIndex).trimStart();
@@ -81,7 +85,8 @@ function findSafeSplitIndex(chunk: string, maxLength: number): number {
   }
 
   // Hard cut as last resort
-  return maxLength;
+  const last = chunk.charCodeAt(maxLength - 1);
+  return last >= 0xd800 && last <= 0xdbff ? maxLength - 1 : maxLength;
 }
 
 /**

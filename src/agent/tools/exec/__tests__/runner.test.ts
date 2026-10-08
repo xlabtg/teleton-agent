@@ -105,6 +105,51 @@ describe("runner", () => {
     expect(result.stderr).toContain("ENOENT");
   });
 
+  it("waits for process termination after cancellation (#758)", async () => {
+    const proc = createMockProcess();
+    mockSpawn.mockReturnValue(proc);
+    const kill = vi.spyOn(process, "kill").mockReturnValue(true);
+    const controller = new AbortController();
+    let settled = false;
+    const promise = runCommand("long job", {
+      timeout: 120_000,
+      maxOutput: 5000,
+      signal: controller.signal,
+    }).then((result) => {
+      settled = true;
+      return result;
+    });
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(kill).toHaveBeenCalledWith(-12345, "SIGTERM");
+    expect(kill).toHaveBeenCalledWith(-12345, "SIGKILL");
+    expect(settled).toBe(false);
+    proc.emit("close", null, "SIGKILL");
+    expect(await promise).toMatchObject({ timedOut: true, signal: "SIGKILL" });
+  });
+
+  it("kills remaining children before reporting timeout even if the parent closes first", async () => {
+    const proc = createMockProcess();
+    mockSpawn.mockReturnValue(proc);
+    const kill = vi.spyOn(process, "kill").mockImplementation(() => true);
+    const controller = new AbortController();
+    const promise = runCommand("long job", {
+      timeout: 100,
+      maxOutput: 5000,
+      signal: controller.signal,
+    });
+    await vi.advanceTimersByTimeAsync(100);
+    controller.abort();
+    proc.emit("close", null, "SIGTERM");
+    await promise;
+    expect(kill.mock.calls).toEqual([
+      [-12345, "SIGTERM"],
+      [-12345, "SIGKILL"],
+    ]);
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(kill).toHaveBeenCalledTimes(2);
+  });
+
   it("kills process tree on timeout", async () => {
     const proc = createMockProcess();
     mockSpawn.mockReturnValue(proc);

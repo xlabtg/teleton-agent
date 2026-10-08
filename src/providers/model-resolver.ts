@@ -79,11 +79,13 @@ export async function registerGocoonModels(httpPort: number): Promise<string[]> 
 }
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const NVIDIA_DISABLE_STREAMING_USAGE_MODELS = new Set(["z-ai/glm-5.1"]);
+const NVIDIA_DISABLE_STREAMING_USAGE_MODELS = /^z-ai\/glm-5(?:[.-]|$)/i;
 
 /** Build a NVIDIA NIM model object on demand (OpenAI-compatible, fixed base URL) */
 function buildNvidiaModel(modelId: string): Model<"openai-completions"> {
-  const disablesStreamingUsage = NVIDIA_DISABLE_STREAMING_USAGE_MODELS.has(modelId.toLowerCase());
+  // Older catalogs used the NVIDIA page slug instead of the API model ID.
+  modelId = modelId.replace(/^z-ai\/glm-5-3(?=-|$)/, "z-ai/glm-5.3");
+  const disablesStreamingUsage = NVIDIA_DISABLE_STREAMING_USAGE_MODELS.test(modelId);
   return {
     id: modelId,
     name: modelId,

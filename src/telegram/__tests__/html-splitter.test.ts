@@ -54,3 +54,11 @@ describe("splitTelegramHtml", () => {
     expect(chunks.every((chunk) => chunk.length <= 80)).toBe(true);
   });
 });
+
+it("moves a supplementary code point after an entity to the next chunk (#765)", () => {
+  const html = "a".repeat(14) + "&amp;😀z";
+  const parts = splitTelegramHtml(html, 20);
+  expect(parts.join("")).toBe(html);
+  expect(parts.every((part) => part.isWellFormed())).toBe(true);
+  expect(parts.every((part) => part.length <= 20)).toBe(true);
+});

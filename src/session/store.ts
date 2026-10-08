@@ -260,7 +260,9 @@ export function resetSession(chatId: string): SessionEntry {
     messageCount: 0,
     lastChannel: oldSession?.lastChannel || "telegram",
     lastTo: oldSession?.lastTo || chatId,
-    contextTokens: oldSession?.contextTokens,
+    contextTokens: undefined,
+    inputTokens: 0,
+    outputTokens: 0,
     model: oldSession?.model,
     provider: oldSession?.provider,
   };
@@ -271,7 +273,7 @@ export function resetSession(chatId: string): SessionEntry {
   db.prepare(
     `
     UPDATE sessions
-    SET id = ?, started_at = ?, updated_at = ?, message_count = 0
+    SET id = ?, started_at = ?, updated_at = ?, message_count = 0, input_tokens = 0, output_tokens = 0, context_tokens = NULL, last_message_id = NULL
     WHERE chat_id = ?
   `
   ).run(newSession.sessionId, newSession.createdAt, newSession.updatedAt, sessionKey);

@@ -4,6 +4,7 @@ const log = createLogger("Telegram");
 
 const DEFAULT_MAX_WAIT_SECONDS = 120;
 const DEFAULT_MAX_RETRIES = 2;
+const exhaustedErrors = new WeakSet<object>();
 
 /**
  * Adaptive per-chat flood gate.
@@ -127,6 +128,7 @@ export async function withFloodRetry<T>(
       }
       return result;
     } catch (error) {
+      if (error && typeof error === "object" && exhaustedErrors.has(error)) throw error;
       // GramJS FloodWaitError has a .seconds property
       let waitSeconds = (error as Record<string, unknown>).seconds;
 
@@ -161,5 +163,6 @@ export async function withFloodRetry<T>(
     }
   }
 
+  if (lastError) exhaustedErrors.add(lastError);
   throw lastError ?? new Error("FLOOD_WAIT retries exhausted");
 }

@@ -1,3 +1,4 @@
+import type { ToolContext } from "../../agent/tools/types.js";
 import type { AgentRuntime } from "../../agent/runtime.js";
 import type { ManagedAgentService } from "../../agents/service.js";
 import type { ManagedAgentSnapshot } from "../../agents/types.js";
@@ -21,6 +22,7 @@ export interface PipelineExecutorDeps {
   store: PipelineStore;
   agent: AgentRuntime;
   agentManager?: ManagedAgentService;
+  toolContext?: ToolContext;
 }
 
 export interface ExecutePipelineOptions {
@@ -323,7 +325,14 @@ export class PipelineExecutor {
         isGroup: false,
         pendingContext: JSON.stringify(context),
         signal: options.signal,
+        toolContext: this.deps.toolContext
+          ? { ...this.deps.toolContext, signal: options.signal }
+          : undefined,
       });
+      if (response.error) throw new Error(response.error);
+      if (response.content === "Internal error: Agent loop failed to produce a response.") {
+        throw new Error(response.content);
+      }
       return response.content;
     }
 

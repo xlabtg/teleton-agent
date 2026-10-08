@@ -278,7 +278,7 @@ export async function registerMcpTools(
         const namespacedName = `mcp.${conn.serverName}.${mcpTool.name}`;
         const validate = ajv.compile(schema);
 
-        const executor: ToolExecutor = async (params): Promise<ToolResult> => {
+        const executor: ToolExecutor = async (params, context): Promise<ToolResult> => {
           // Validate params against the advertised JSON Schema before calling the MCP server.
           if (!validate(params)) {
             const detail = (validate.errors ?? [])
@@ -291,24 +291,14 @@ export async function registerMcpTools(
           }
 
           try {
-            let timeoutHandle: ReturnType<typeof setTimeout>;
-            const result = await Promise.race([
-              conn.client.callTool({
+            const result = await conn.client.callTool(
+              {
                 name: mcpTool.name,
                 arguments: params as Record<string, unknown>,
-              }),
-              new Promise<never>((_, reject) => {
-                timeoutHandle = setTimeout(
-                  () =>
-                    reject(
-                      new Error(
-                        `MCP tool "${mcpTool.name}" timed out after ${TOOL_EXECUTION_TIMEOUT_MS / 1000}s`
-                      )
-                    ),
-                  TOOL_EXECUTION_TIMEOUT_MS
-                );
-              }),
-            ]).finally(() => clearTimeout(timeoutHandle));
+              },
+              undefined,
+              { timeout: TOOL_EXECUTION_TIMEOUT_MS, signal: context.signal }
+            );
 
             if (result.isError) {
               const errorText = extractText(
