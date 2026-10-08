@@ -3,10 +3,10 @@ set -euo pipefail
 
 # ──────────────────────────────────────────────
 # Teleton Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/TONresistor/teleton-agent/main/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/xlabtg/teleton-agent/main/install.sh | bash
 # ──────────────────────────────────────────────
 
-REPO="tonresistor/teleton-agent"
+REPO="xlabtg/teleton-agent"
 DOCKER_IMAGE="ghcr.io/${REPO}:latest"
 NPM_PACKAGE="teleton"
 MIN_NODE_VERSION=20

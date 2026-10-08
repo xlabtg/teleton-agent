@@ -59,7 +59,7 @@ That's it. Your agent is live.
 
 Links
 
-github.com/TONresistor/teleton-agent
+github.com/xlabtg/teleton-agent
 docs.teletonagent.dev
 teletonagent.dev
 @teletonagents on Telegram

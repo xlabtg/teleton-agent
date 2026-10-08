@@ -683,7 +683,7 @@ docker run -d \
   -e TELETON_API_ENABLED=true \
   -e TELETON_JSON_CREDENTIALS=true \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   -p 7778:7778 \
   ghcr.io/xlabtg/teleton-agent
 ```
@@ -696,7 +696,7 @@ services:
     image: ghcr.io/xlabtg/teleton-agent:latest
     restart: unless-stopped
     ports:
-      - "7777:7777"   # WebUI
+      - "127.0.0.1:7777:7777"   # WebUI
       - "7778:7778"   # Management API
     volumes:
       - teleton-data:/data

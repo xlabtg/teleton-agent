@@ -35,7 +35,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TONresistor/teleton-agent",
+    "url": "https://github.com/xlabtg/teleton-agent",
     "directory": "packages/sdk"
   },
   "devDependencies": {

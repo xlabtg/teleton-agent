@@ -27,17 +27,17 @@ npm install -g teleton@latest
 
 **One-liner:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TONresistor/teleton-agent/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/xlabtg/teleton-agent/main/install.sh | bash
 ```
 
 **Docker:**
 ```bash
-docker run -it -v ~/.teleton:/data ghcr.io/tonresistor/teleton:latest setup
+docker run -it -v ~/.teleton:/data ghcr.io/xlabtg/teleton-agent:latest setup
 ```
 
 **From source:**
 ```bash
-git clone https://github.com/TONresistor/teleton-agent.git
+git clone https://github.com/xlabtg/teleton-agent.git
 cd teleton-agent
 npm install && npm run build
 ```
@@ -331,7 +331,7 @@ Verifies config, Telegram session, wallet, and database.
 ### From Source
 
 ```bash
-git clone https://github.com/TONresistor/teleton-agent.git
+git clone https://github.com/xlabtg/teleton-agent.git
 cd teleton-agent
 npm install
 npm run build
@@ -403,7 +403,7 @@ src/
 
 ## Support
 
-- **GitHub Issues**: [github.com/TONresistor/teleton-agent/issues](https://github.com/TONresistor/teleton-agent/issues)
+- **GitHub Issues**: [github.com/xlabtg/teleton-agent/issues](https://github.com/xlabtg/teleton-agent/issues)
 - **Group Chat**: [@ResistanceForum](https://t.me/ResistanceForum)
 
 ---

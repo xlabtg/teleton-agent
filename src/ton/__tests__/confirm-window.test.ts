@@ -34,7 +34,7 @@ describe("wallet validity window (#749)", () => {
       const promise = sendWalletTx(client as never, contract as never, {
         secretKey: Buffer.alloc(64),
         messages: [],
-      });
+      }).catch((error) => error);
       await vi.advanceTimersByTimeAsync(30_000);
       expect(await promise).toMatchObject({ seqno: 7, hash: "01".repeat(32) });
       expect(contract.sendTransfer).toHaveBeenCalledTimes(1);

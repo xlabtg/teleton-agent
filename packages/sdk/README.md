@@ -3,7 +3,7 @@
 **Plugin SDK for Teleton Agent** — TypeScript types and utilities for building plugins that interact with Telegram and the TON blockchain.
 
 [![npm](https://img.shields.io/npm/v/@teleton-agent/sdk?style=flat-square)](https://www.npmjs.com/package/@teleton-agent/sdk)
-[![license](https://img.shields.io/npm/l/@teleton-agent/sdk?style=flat-square)](https://github.com/TONresistor/teleton-agent/blob/main/LICENSE)
+[![license](https://img.shields.io/npm/l/@teleton-agent/sdk?style=flat-square)](https://github.com/xlabtg/teleton-agent/blob/main/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8+-blue?style=flat-square)](https://www.typescriptlang.org/)
 
 ---
@@ -1317,12 +1317,12 @@ Always check `telegram.isAvailable()` before calling Telegram methods in `start(
 
 ## License
 
-MIT -- see [LICENSE](https://github.com/TONresistor/teleton-agent/blob/main/LICENSE).
+MIT -- see [LICENSE](https://github.com/xlabtg/teleton-agent/blob/main/LICENSE).
 
 Copyright 2025-2026 Digital Resistance.
 
 ## Links
 
-- [Repository](https://github.com/TONresistor/teleton-agent)
-- [Issues](https://github.com/TONresistor/teleton-agent/issues)
-- [Teleton Agent](https://github.com/TONresistor/teleton-agent) -- the main project
+- [Repository](https://github.com/xlabtg/teleton-agent)
+- [Issues](https://github.com/xlabtg/teleton-agent/issues)
+- [Teleton Agent](https://github.com/xlabtg/teleton-agent) -- the main project

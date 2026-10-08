@@ -28,7 +28,7 @@ teleton setup --ui
 Для разработки из исходников:
 
 ```bash
-git clone https://github.com/TONresistor/teleton-agent.git
+git clone https://github.com/xlabtg/teleton-agent.git
 cd teleton-agent
 npm install
 npm run build

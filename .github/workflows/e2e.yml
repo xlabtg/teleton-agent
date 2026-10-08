@@ -3,8 +3,6 @@ name: E2E
 on:
   pull_request:
     branches: [main]
-  pull_request_target:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -16,14 +14,9 @@ jobs:
   e2e:
     name: E2E / WebUI (Playwright)
     runs-on: ubuntu-latest
-    # Gated behind the RUN_E2E flag and skipped on forks (no access to secrets).
-    # Set the `RUN_E2E` repository variable to `true` to enable the suite.
-    # Same-repo PRs run via `pull_request`; fork PRs would run via
-    # `pull_request_target`, but those are skipped because they lack secrets.
-    if: |
-      vars.RUN_E2E == 'true' &&
-      (github.event_name != 'pull_request_target' ||
-       github.event.pull_request.head.repo.full_name != github.repository)
+    # The suite runs without deployment secrets, including for fork PRs.
+    if: vars.RUN_E2E == 'true'
+    timeout-minutes: 25
     env:
       RUN_E2E: ${{ vars.RUN_E2E }}
 

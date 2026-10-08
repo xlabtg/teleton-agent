@@ -374,6 +374,7 @@ All environment variables override the corresponding `config.yaml` value at star
 | `TELETON_TONCENTER_API_KEY` | Toncenter API key | - |
 | `TELETON_WEBUI_ENABLED` | Enable WebUI | `false` |
 | `TELETON_WEBUI_PORT` | WebUI port | `7777` |
+| `TELETON_WEBUI_BIND` | Compose bind address (`0.0.0.0` opts into external access) | `127.0.0.1` |
 | `TELETON_WEBUI_HOST` | WebUI bind address | `127.0.0.1` |
 | `TELETON_API_ENABLED` | Enable Management API | `false` |
 | `TELETON_API_PORT` | Management API port | `7778` |

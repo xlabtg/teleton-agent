@@ -50,3 +50,18 @@ blob-report/
 
 # Claude Code session logs
 .claude-session/
+
+# Local issue-solver artifacts
+APPLY_LOG.txt
+DUMP.txt
+CR_SNAPSHOT.txt
+STATE2.txt
+VERIFY_STATE.txt
+COMMIT_RESULT.txt
+REPORT.txt
+PIPELINE.status
+PR_BODY.md
+commit_and_push.sh
+run_pipeline.sh
+report.sh
+apply_a11y.py

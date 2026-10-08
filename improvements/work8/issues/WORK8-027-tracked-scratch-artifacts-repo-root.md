@@ -13,7 +13,7 @@ github-issue: "https://github.com/xlabtg/teleton-agent/issues/766"
 
 All of these are tracked (`git ls-files`); they were added by commit 55ce5a4d "Auto-commit before critical-error recovery". The scripts hard-code the solver's working directory and do git writes:
 ```sh
-cd /tmp/gh-issue-solver-1780101166480
+cd "$REPO_ROOT"
 rm -f apply_a11y.py run_pipeline.sh DUMP.txt ...
 rm -rf web/test-results web/a11y-report
 git merge origin/main --no-edit
@@ -29,7 +29,7 @@ No secrets were found. They are not in the npm tarball (`files`: dist/, bin/, sr
 
 `git ls-files | grep -E '^(APPLY_LOG|DUMP|CR_SNAPSHOT|STATE2|VERIFY_STATE)\.txt|commit_and_push.sh'`. Running `sh commit_and_push.sh` on a machine where that /tmp path exists would rm files, commit, merge and push to a stale branch.
 
-**Verification evidence:** The `git ls-files` output includes all the listed files. `grep` found `/tmp/gh-issue-solver-1780101166480` in 4 tracked scripts.
+**Verification evidence:** The `git ls-files` output includes all the listed files. `grep` found an absolute temporary workspace path in 4 tracked scripts.
 
 ## Impact
 
@@ -41,12 +41,12 @@ Repo clutter, leaked internal tooling paths and branch names, and a footgun scri
 
 ## Regression Test
 
-Add a CI step that fails if `git ls-files` matches a root-level denylist (`*_LOG.txt`, `DUMP.txt`, `STATE*.txt`, `*.status`, `/tmp/gh-issue-solver` string in tracked files).
+Add a CI step that fails if `git ls-files` matches a root-level denylist (`*_LOG.txt`, `DUMP.txt`, `STATE*.txt`, `*.status`, temporary workspace paths in tracked files).
 
 ## Acceptance Criteria
 
 - [ ] None of the listed files are tracked.
-- [ ] `grep -rn gh-issue-solver $(git ls-files)` returns nothing outside experiments/.
+- [ ] No temporary workspace paths occur in tracked files outside experiments/.
 
 ## Related Artifacts
 

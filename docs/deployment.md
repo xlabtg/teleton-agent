@@ -85,7 +85,7 @@ docker run -d \
   --name teleton \
   --restart unless-stopped \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   ghcr.io/xlabtg/teleton-agent
 ```
 
@@ -116,7 +116,7 @@ docker run -d \
   --name teleton \
   --restart unless-stopped \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   ghcr.io/xlabtg/teleton-agent
 ```
 
@@ -134,7 +134,7 @@ docker run -d \
   -e TELETON_TG_PHONE="+1234567890" \
   -e TELETON_WEBUI_ENABLED="true" \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   ghcr.io/xlabtg/teleton-agent
 ```
 
@@ -162,7 +162,7 @@ services:
     container_name: teleton
     restart: unless-stopped
     ports:
-      - "7777:7777"  # WebUI (remove if not using)
+      - "127.0.0.1:7777:7777"  # WebUI (remove if not using)
       - "7778:7778"  # Management API (health probes + Prometheus metrics)
     volumes:
       - teleton-data:/data
@@ -236,7 +236,7 @@ For development or when you need to customize the agent.
 
 ```bash
 # Clone the repository
-git clone https://github.com/TONresistor/teleton-agent.git
+git clone https://github.com/xlabtg/teleton-agent.git
 cd teleton-agent
 
 # Install dependencies (includes SDK workspace)
@@ -432,7 +432,7 @@ docker run -d \
   --restart unless-stopped \
   -e TELETON_API_ENABLED=true \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   -p 7778:7778 \
   ghcr.io/xlabtg/teleton-agent
 ```
@@ -452,6 +452,7 @@ Complete list of environment variables recognized by Teleton Agent:
 | `TELETON_TG_PHONE` | Telegram phone number | from config |
 | `TELETON_WEBUI_ENABLED` | Enable WebUI (`"true"` / `"false"`) | from config |
 | `TELETON_WEBUI_PORT` | WebUI port | `7777` |
+| `TELETON_WEBUI_BIND` | Compose bind address (`0.0.0.0` opts into external access) | `127.0.0.1` |
 | `TELETON_WEBUI_HOST` | WebUI bind address | `127.0.0.1` |
 | `TELETON_API_ENABLED` | Enable Management API | `false` |
 | `TELETON_API_PORT` | Management API HTTPS port | `7778` |
@@ -589,7 +590,7 @@ docker run -d \
   --name teleton \
   --restart unless-stopped \
   -v teleton-data:/data \
-  -p 7777:7777 \
+  -p 127.0.0.1:7777:7777 \
   ghcr.io/xlabtg/teleton-agent
 ```
 
@@ -605,7 +606,7 @@ docker compose up -d
 Re-run the one-liner installer to update:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/TONresistor/teleton-agent/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/xlabtg/teleton-agent/main/install.sh | bash
 ```
 
 The installer verifies that `~/.teleton-app` still points to the official repository before pulling. If it detects an unexpected `origin` URL or uncommitted local changes it aborts with a clear error, so you can investigate before any code runs.
@@ -614,7 +615,7 @@ If you see an unexpected origin error, remove the directory and re-run:
 
 ```bash
 rm -rf ~/.teleton-app
-curl -fsSL https://raw.githubusercontent.com/TONresistor/teleton-agent/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/xlabtg/teleton-agent/main/install.sh | bash
 ```
 
 ### Version Pinning

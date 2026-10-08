@@ -201,7 +201,7 @@ export function finalSummaryBox(steps: StepDef[], connected: boolean): string {
         `   to shape your agent's behavior`,
         "",
         `${TON("4.")} Read the docs`,
-        `   ${TON.underline("https://github.com/TONresistor/teleton-agent")}`,
+        `   ${TON.underline("https://github.com/xlabtg/teleton-agent")}`,
       ]
     : [
         `${TON("1.")} Start the agent`,
